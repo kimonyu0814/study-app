@@ -287,7 +287,7 @@ button.mark{background:transparent;padding:0;cursor:pointer}
       <span class="sync" id="sync">불러오는 중…</span>
     </div>
     <div class="actions" id="viewActions">
-      <button type="button" class="btn" id="editBtn">수정하기</button>
+      <button type="button" class="btn" id="editBtn">관리</button>
     </div>
   </div>
 
@@ -502,7 +502,7 @@ async function save(force){
       const o = el("button", "btn good", "내 내용으로 덮어쓰기"); o.type = "button"; o.onclick = () => { notice(""); save(true); };
       const l = el("button", "btn ghost", "최신 내용 불러오기"); l.type = "button"; l.onclick = () => { notice(""); endEdit(); pull(); };
       a.append(o, l); n.appendChild(a);
-    } else if (j && j.error === "pw"){ setSync("on"); forgetPw(); notice("비밀번호가 바뀌었습니다. 취소 후 다시 수정하기를 눌러 주세요.", true); }
+    } else if (j && j.error === "pw"){ setSync("on"); forgetPw(); notice("비밀번호가 바뀌었습니다. 취소 후 다시 '관리'를 눌러 주세요.", true); }
     else throw new Error();
   } catch(e){ setSync("err", "저장 실패 · 인터넷 연결 확인 후 다시 '수정 완료'를 누르세요"); }
   $("saveBtn").disabled = false;
@@ -573,7 +573,7 @@ function calItems(t, only){
 function toggleItem(x){
   const want = !x.it.done;
   if (editing){ x.it.done = want; markDone(x.it, want); render(); return; }
-  if (!x.it.id){ notice("이 항목은 '수정하기'에서 체크해 주세요."); return; }
+  if (!x.it.id){ notice("이 항목은 '관리'에서 체크해 주세요."); return; }
   const id = x.it.id;
   commit(d => { const it = findById(d, id); if (it){ it.done = want; markDone(it, want); } });
 }
@@ -674,7 +674,7 @@ function renderCal(t, only, ex){
       const inp = $("panel").querySelector(`.calsec .erow input[data-id="${it.id}"]`); if (inp) inp.focus();
     };
     row.appendChild(add); box.appendChild(row);
-  } else if (!list.length) box.appendChild(el("p", "empty", "이날 할 일이 없습니다." + (editing ? "" : " 수정하기에서 추가할 수 있습니다.")));
+  } else if (!list.length) box.appendChild(el("p", "empty", "이날 할 일이 없습니다." + (editing ? "" : " '관리'에서 추가할 수 있습니다.")));
   else {
     const ul = el("ul", "list");
     list.forEach(x => {
@@ -851,7 +851,7 @@ function renderTabs(){
     b.onclick = () => { nav.subj = x.k; saveNav(); render(); };
     st.appendChild(b);
   });
-  if (!TS(t).length) st.appendChild(el("p", "empty stempty", editing ? "아래 '+ 과목 추가'로 이 학기 과목을 넣으세요." : "등록된 과목이 없습니다. 수정하기를 눌러 이 학기 과목을 추가하세요."));
+  if (!TS(t).length) st.appendChild(el("p", "empty stempty", editing ? "아래 '+ 과목 추가'로 이 학기 과목을 넣으세요." : "등록된 과목이 없습니다. '관리'를 눌러 이 학기 과목을 추가하세요."));
   sub.appendChild(row);
   const y = yearKey(nav.main);
   nav.yrS = nav.yrS === "mock" ? "mock" : "school";
@@ -945,7 +945,7 @@ function renderHome(p){
     left.append(big, what);
   } else {
     const any = EXAMS.some(e => examDate(t, e.k));
-    left.append(el("div", "big", "D-?"), el("div", "what", any ? "이번 학기 시험이 모두 끝났습니다. 수고했습니다!" : "수정하기 → 학년 → 학기 → 중간/기말 옆 '시험일'을 넣으면 D-day가 표시됩니다."));
+    left.append(el("div", "big", "D-?"), el("div", "what", any ? "이번 학기 시험이 모두 끝났습니다. 수고했습니다!" : "'관리' → 학년 → 학기 → 중간/기말 옆 '시험일'을 넣으면 D-day가 표시됩니다."));
   }
   const chips = el("div", "chips");
   EXAMS.forEach(e => {
@@ -1076,7 +1076,7 @@ const sv = (tag, attrs, text) => { const e = document.createElementNS(SVGNS, tag
 function lineChart(pts, kind, color, W, H, emptyMsg){
   const box = el("div", "chart"); box.style.setProperty("--c", color);
   const vals = pts.map(p => p.v).filter(v => v != null);
-  if (!vals.length){ box.appendChild(el("div", "cempty", emptyMsg || "아직 입력된 성적이 없습니다. 수정하기에서 입력하세요.")); return box; }
+  if (!vals.length){ box.appendChild(el("div", "cempty", emptyMsg || "아직 입력된 성적이 없습니다. '관리'에서 입력하세요.")); return box; }
   const sc = makeScale(kind, vals);
   const pl = 30, pr = 16, ptop = 14, pb = pts.some(p => p.x2) ? 34 : 22;
   const iw = W - pl - pr, ih = H - ptop - pb;
@@ -1397,7 +1397,7 @@ function renderSection(t, k, ex, s, items){
   h.appendChild(el("span", "meta", meta)); sec.appendChild(h);
 
   if (editing){ sec.appendChild(editList(t, k, ex, s, items)); return sec; }
-  if (!items.length){ sec.appendChild(el("p", "empty", `아직 ${s.n} 내용이 없습니다. 수정하기를 눌러 추가하세요.`)); return sec; }
+  if (!items.length){ sec.appendChild(el("p", "empty", `아직 ${s.n} 내용이 없습니다. '관리'를 눌러 추가하세요.`)); return sec; }
   if (s.k === "prog"){
     const n = items.length, d = items.filter(i => i.s === 2).length, p = items.filter(i => i.s === 1).length;
     const bar = el("div", "bar"); const i1 = el("i"); i1.style.width = d / n * 100 + "%"; const b1 = el("b"); b1.style.width = p / n * 100 + "%";
@@ -1484,7 +1484,7 @@ function render(){
   if (nav.main === "grade"){ p.style.setProperty("--c", "var(--grade)"); return renderGrade(p); }
   const t = navTerm();
   const cs = TS(t).find(x => x.k === nav.subj);
-  if (!cs){ p.style.setProperty("--c", "var(--rule)"); const s = el("section", "sec"); s.appendChild(el("p", "empty", editing ? "위의 '과목 관리'에서 과목을 추가하면 여기에 시험범위·진도·숙제·할 것을 적을 수 있습니다." : "이 학기에 등록된 과목이 없습니다. 수정하기 → '+ 과목 추가'로 과목을 넣으세요.")); p.appendChild(s); return; }
+  if (!cs){ p.style.setProperty("--c", "var(--rule)"); const s = el("section", "sec"); s.appendChild(el("p", "empty", editing ? "위의 '과목 관리'에서 과목을 추가하면 여기에 시험범위·진도·숙제·할 것을 적을 수 있습니다." : "이 학기에 등록된 과목이 없습니다. '관리' → '+ 과목 추가'로 과목을 넣으세요.")); p.appendChild(s); return; }
   p.style.setProperty("--c", `var(--${cs.g})`);
   const ex = navEx(), s = subjOf(t, nav.subj, ex);
   p.appendChild(renderCal(t, nav.subj, ex));
