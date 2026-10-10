@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>정답 확인 · 한국사2 · 통합사회2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=Nanum+Myeongjo:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FFFDFB; --sheet:#FFF6F6; --line:#E7A9B5; --line-soft:#F4D6DC;
+  --ink:#1D2540; --muted:#6B6F82; --mark:#23262E; --pen:#D0312D; --ok:#1F7A4D;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#16181F; --sheet:#1E1B21; --line:#9C5A68; --line-soft:#3A2B31;
+    --ink:#ECEAF2; --muted:#A3A6B8; --mark:#F1EFF5; --pen:#FF6B63; --ok:#5CCB93;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#16181F; --sheet:#1E1B21; --line:#9C5A68; --line-soft:#3A2B31;
+  --ink:#ECEAF2; --muted:#A3A6B8; --mark:#F1EFF5; --pen:#FF6B63; --ok:#5CCB93;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.55}
+main{max-width:680px;margin:0 auto;padding:28px 20px 60px}
+h1{font-family:"Nanum Myeongjo","Batang",serif;font-weight:800;font-size:2rem;margin:0 0 4px;letter-spacing:-.02em}
+.sub{color:var(--muted);margin:0 0 22px;font-size:.95rem}
+h2{font-size:1rem;margin:0 0 10px;font-weight:700}
+section{margin-top:34px}
+.books{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.books button{font:inherit;font-size:.92rem;padding:10px 12px;border:1.5px solid var(--line);background:transparent;color:var(--ink);border-radius:6px;cursor:pointer;text-align:left;line-height:1.3}
+.books button small{display:block;color:var(--muted);font-size:.75rem}
+.books button[aria-pressed="true"]{background:var(--line);color:#fff;border-color:var(--line)}
+.books button[aria-pressed="true"] small{color:#fff;opacity:.85}
+.selwrap{margin-top:12px}
+select{width:100%;font:inherit;font-size:1rem;padding:10px 12px;border:1.5px solid var(--line);border-radius:6px;background:var(--sheet);color:var(--ink)}
+.sheet{background:var(--sheet);border:2px solid var(--line);border-radius:4px;margin-top:18px}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;border-bottom:2px solid var(--line);color:var(--line);font-weight:700;font-size:.9rem}
+.sheet-head span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sheet-head span:last-child{flex:none}
+.omr{display:grid;grid-template-columns:96px 1fr;align-items:stretch;min-height:98px}
+.qno{display:flex;align-items:center;justify-content:center;border-right:2px solid var(--line);padding:18px 6px;font-size:1.7rem;font-weight:700;font-variant-numeric:tabular-nums}
+.bubbles{display:flex;justify-content:space-around;align-items:center;padding:18px 10px}
+.bubble{width:44px;height:62px;border:2px solid var(--line);border-radius:22px;display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;font-weight:700;color:var(--line);background:transparent;cursor:pointer;position:relative;font-family:inherit;transition:background .18s,color .18s}
+.bubble.filled{background:var(--mark);border-color:var(--mark);color:var(--sheet)}
+.bubble.mine::after{content:"";position:absolute;inset:-7px;border:2.5px solid var(--pen);border-radius:28px}
+.subj{padding:14px 16px;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.subj .tag{font-size:.8rem;color:var(--muted)}
+.subj .ans{font-weight:700;font-size:1.05rem;word-break:keep-all}
+.subj .hidden{color:var(--muted);letter-spacing:.2em}
+button:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--pen);outline-offset:2px}
+.nums{display:grid;grid-template-columns:repeat(auto-fill,minmax(48px,1fr));gap:6px;padding:12px 14px;border-top:1px dashed var(--line)}
+.nums button{font:inherit;font-size:.85rem;height:38px;border:1.5px solid var(--line-soft);border-radius:6px;background:transparent;color:var(--ink);cursor:pointer;font-variant-numeric:tabular-nums;position:relative}
+.nums button.t::after{content:"";position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--muted)}
+.nums button[aria-current="true"]{border-color:var(--ink);border-width:2px;font-weight:700}
+.nums button.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.nums button.no{border-color:var(--pen);color:var(--pen)}
+.verdict{text-align:center;min-height:1.6em;margin-top:12px;font-weight:700;font-size:1.05rem}
+.verdict.ok{color:var(--ok)} .verdict.no{color:var(--pen)}
+.choice{display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.choice[hidden]{display:none}
+.choice button{font:inherit;font-size:.95rem;padding:9px 16px;border-radius:6px;border:1.5px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.choice button.primary{background:var(--pen);border-color:var(--pen);color:#fff;font-weight:700}
+.choice button.good{border-color:var(--ok);color:var(--ok);font-weight:700}
+.choice button[hidden]{display:none}
+.legend{display:flex;gap:14px;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-top:12px;font-size:.8rem;color:var(--muted)}
+.rng{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:.85rem;color:var(--muted)}
+.rng .rng-l{margin-right:2px}
+.rng select{width:auto;min-width:76px;font-size:.92rem;padding:7px 8px;font-variant-numeric:tabular-nums}
+.rng button{font:inherit;font-size:.88rem;padding:7px 12px;border-radius:6px;border:1.5px solid var(--ok);background:transparent;color:var(--ok);font-weight:700;cursor:pointer}
+.rng button.arm{background:var(--ok);color:#fff}
+.rng button:focus-visible{outline:3px solid var(--pen);outline-offset:2px}
+.legend .reset{font:inherit;font-size:.8rem;background:none;border:none;color:var(--muted);text-decoration:underline;cursor:pointer;padding:4px}
+textarea{width:100%;font:inherit;font-size:1.05rem;letter-spacing:.12em;padding:12px;border:2px solid var(--line);border-radius:4px;background:var(--sheet);color:var(--ink);resize:vertical;min-height:70px}
+.hint{font-size:.85rem;color:var(--muted);margin:6px 0 0}
+.score{font-family:"Nanum Myeongjo",serif;font-weight:800;font-size:2.4rem;color:var(--pen);margin:14px 0 4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;margin-top:10px}
+.cell{border:1px solid var(--line-soft);border-radius:4px;padding:6px 4px;text-align:center;font-size:.85rem;background:var(--sheet)}
+.cell b{display:block;font-size:.75rem;color:var(--muted);font-weight:500}
+.cell.no{border-color:var(--pen);color:var(--pen)}
+.cell.skip{opacity:.55}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 22px}
+.top .sub{margin:0}
+.sync{font-size:.78rem;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+.sync::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.sync.on::before{background:var(--ok)} .sync.busy::before{background:#D9A400}
+.books button .bk-meta{display:block;font-size:.75rem;color:var(--muted);margin-top:6px;font-variant-numeric:tabular-nums}
+.books button[aria-pressed="true"] .bk-meta{color:#fff;opacity:.9}
+.bar{display:flex;height:5px;border-radius:3px;background:var(--line-soft);overflow:hidden;margin-top:6px}
+.bar i{background:var(--ok)} .bar b{background:var(--pen)}
+.books button[aria-pressed="true"] .bar{background:rgba(255,255,255,.35)}
+.tabs{display:flex;margin-top:22px;border-bottom:2px solid var(--line)}
+.tabs button{font:inherit;font-size:.98rem;font-weight:700;padding:10px 18px;border:none;background:transparent;color:var(--muted);cursor:pointer;margin-bottom:-2px;border-bottom:3px solid transparent}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--pen)}
+.psum{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:20px 0 4px}
+.psum .big{font-family:"Nanum Myeongjo",serif;font-weight:800;font-size:2.2rem;font-variant-numeric:tabular-nums;line-height:1.1}
+.psum .big small{font-size:1.1rem;color:var(--muted)}
+.psum .meta{color:var(--muted);font-size:.88rem}
+.psum .meta b{color:var(--ink)}
+.opt{display:flex;align-items:center;gap:8px;margin:16px 0 4px;font-size:.9rem;color:var(--muted)}
+.opt input{accent-color:var(--pen);width:17px;height:17px}
+.grp{font-size:.85rem;color:var(--line);font-weight:700;margin:22px 0 4px;padding-bottom:4px;border-bottom:2px solid var(--line)}
+details.srow{border-bottom:1px solid var(--line-soft)}
+details.srow summary{list-style:none;cursor:pointer;padding:11px 2px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;align-items:baseline}
+details.srow summary::-webkit-details-marker{display:none}
+details.srow summary .nm{min-width:0;word-break:keep-all}
+details.srow summary .ct{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+details.srow summary .ct .x{color:var(--pen);font-weight:700}
+details.srow summary .bar{grid-column:1/-1}
+details.srow summary:focus-visible{outline:3px solid var(--pen);outline-offset:2px}
+details.srow.done .nm::after{content:" ✓";color:var(--ok);font-weight:700}
+.chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:5px;padding:4px 0 14px}
+.chips button{font:inherit;font-size:.8rem;height:34px;border:1.5px solid var(--line-soft);border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;font-variant-numeric:tabular-nums}
+.chips button.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.chips button.no{border-color:var(--pen);color:var(--pen);font-weight:700}
+.chips button:focus-visible,.tabs button:focus-visible,.bulkbar button:focus-visible{outline:3px solid var(--pen);outline-offset:2px}
+.empty{color:var(--muted);font-size:.9rem;padding:18px 0}
+.bulkbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}
+.bulkbar button{font:inherit;font-size:.9rem;padding:8px 14px;border-radius:6px;border:1.5px solid var(--ok);background:transparent;color:var(--ok);font-weight:700;cursor:pointer}
+.bulkbar span{font-size:.85rem;color:var(--muted)}
+.bulkbar button.plain{border-color:var(--line);color:var(--muted);font-weight:500}
+.bk{background:var(--sheet);border:2px solid var(--line);border-radius:4px;padding:14px;margin-top:12px}
+.bk-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.bk-no{font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums}
+.bk-pos{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.bk-opts{display:flex;justify-content:space-around;gap:8px;margin:14px 0 10px}
+.bk-opts button{width:52px;height:52px;border-radius:50%;border:2px solid var(--line);background:transparent;color:var(--line);font:inherit;font-size:1.25rem;font-weight:700;cursor:pointer;touch-action:manipulation}
+.bk-opts button:active{background:var(--mark);color:var(--sheet);border-color:var(--mark)}
+.bk-opts button.sel{background:var(--mark);color:var(--sheet);border-color:var(--mark)}
+.bk-opts button:disabled{opacity:.35;cursor:default}
+.bk-nav{display:flex;justify-content:space-between}
+.bk-key{margin:8px 0 0;font-size:.78rem;color:var(--muted)}
+.bk.active{border-color:var(--ink)}
+.bk.active .bk-key{color:var(--ink);font-weight:700}
+.sheet.active{border-color:var(--ink)}
+@media (hover:none){.bk-key{display:none}}
+.bk-nav button{font:inherit;font-size:.9rem;border:none;background:transparent;color:var(--ink);cursor:pointer;padding:6px 4px}
+.bk button:focus-visible,.grid button:focus-visible{outline:3px solid var(--pen);outline-offset:2px}
+button.cell{font:inherit;font-size:.85rem;cursor:pointer;color:var(--ink)}
+.cell.cur{outline:2.5px solid var(--ink);outline-offset:1px}
+.cell.ok{border-color:var(--ok);color:var(--ok)}
+@media (max-width:420px){.bk-opts button{width:46px;height:46px}}
+.sync.err::before{background:var(--pen)}
+button.sync{font:inherit;font-size:.78rem;background:none;border:none;padding:4px 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.mailbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0 4px}
+.mailbar button{font:inherit;font-size:.9rem;padding:8px 14px;border-radius:6px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);font-weight:700;cursor:pointer}
+.mailbar button:disabled{opacity:.5;cursor:default}
+.mailbar button:focus-visible{outline:3px solid var(--pen);outline-offset:2px}
+.mailbar span{font-size:.85rem;color:var(--muted)}
+.mailbar span.ok{color:var(--ok)} .mailbar span.bad{color:var(--pen)}
+.gsync{margin-top:40px;padding-top:18px;border-top:2px solid var(--line)}
+.gsync .row{display:flex;gap:8px;margin-top:10px}
+.gsync input{flex:1;min-width:0;font:inherit;font-size:.9rem;padding:9px 11px;border:1.5px solid var(--line);border-radius:6px;background:var(--sheet);color:var(--ink)}
+.gsync input:focus-visible{outline:3px solid var(--pen);outline-offset:2px}
+.gsync .row button{font:inherit;font-size:.9rem;padding:9px 16px;border-radius:6px;border:none;background:var(--pen);color:#fff;font-weight:700;cursor:pointer;flex:none}
+.gsync .bulkbar button.plain{border-color:var(--line);color:var(--muted);font-weight:500}
+.gsync .ok{color:var(--ok)} .gsync .bad{color:var(--pen)}
+@media (max-width:420px){
+  .omr{grid-template-columns:76px 1fr}
+  .qno{font-size:1.45rem}
+  .bubble{width:38px;height:54px}
+  h1{font-size:1.7rem}
+}
+@media (prefers-reduced-motion:reduce){.bubble{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <h1>정답 확인</h1>
+  <div class="top">
+    <p class="sub">완자 기출픽 · 자이스토리 · 응가사회 · 응가역사</p>
+    <button type="button" class="sync" id="sync">이 브라우저에 저장</button>
+  </div>
+
+  <div class="books" id="books" role="group" aria-label="교재 선택"></div>
+
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" id="tabSolve" aria-selected="true" aria-controls="viewSolve">문제 풀기</button>
+    <button type="button" role="tab" id="tabProg" aria-selected="false" aria-controls="viewProg">풀이 현황</button>
+  </div>
+
+  <div id="viewSolve" role="tabpanel" aria-labelledby="tabSolve">
+    <div class="selwrap"><select id="sec" aria-label="단원 선택"></select></div>
+
+    <div class="sheet">
+      <div class="sheet-head"><span id="setName"></span><span id="setCount"></span></div>
+      <div class="omr">
+        <div class="qno" id="qno" aria-live="polite"></div>
+        <div id="area"></div>
+      </div>
+      <div class="nums" id="nums" role="group" aria-label="문항 번호 선택"></div>
+    </div>
+    <div class="verdict" id="verdict" aria-live="polite"></div>
+    <div class="choice" id="choice" hidden>
+      <button type="button" id="show" class="primary">정답 보기</button>
+      <button type="button" id="selfOk" class="good" hidden>맞았어요</button>
+      <button type="button" id="selfNo" hidden>틀렸어요</button>
+    </div>
+    <div class="legend">
+      <span>초록 = 맞음 · 빨강 = 틀림 · 점 표시 = 주관식</span>
+      <button type="button" class="reset" id="reset">이 단원 기록 지우기</button>
+    </div>
+    <div class="rng">
+      <span class="rng-l">번호 범위 정답 처리</span>
+      <select id="rFrom" aria-label="시작 번호"></select>
+      <span>~</span>
+      <select id="rTo" aria-label="끝 번호"></select>
+      <button type="button" id="rOk">정답 처리</button>
+    </div>
+
+    <section>
+      <h2>한꺼번에 채점 (객관식)</h2>
+      <p class="hint">종이에 푼 답을 순서대로 누르세요. 누르면 다음 객관식 문항으로 바로 넘어가고, 주관식은 자동으로 건너뜁니다.</p>
+      <div class="bk" id="bk">
+        <div class="bk-head"><span class="bk-no" id="bkNo"></span><span class="bk-pos" id="bkPos"></span></div>
+        <div class="bk-opts" id="bkOpts" role="group" aria-label="내 답 선택"></div>
+        <div class="bk-nav">
+          <button type="button" id="bkPrev">‹ 이전</button>
+          <button type="button" id="bkSkip">안 풂 · 다음 ›</button>
+        </div>
+        <p class="bk-key" id="bkKey">키보드: 숫자 1~5 답 입력 · ← 또는 Backspace 이전 · → 또는 0 안 풂</p>
+      </div>
+      <div id="result"></div>
+      <div class="bulkbar" id="bulkbar" hidden>
+        <button type="button" id="bulkSave">풀이 현황에 기록</button>
+        <button type="button" id="bulkClear" class="plain">입력 지우기</button>
+        <span id="bulkMsg"></span>
+      </div>
+    </section>
+  </div>
+
+  <div id="viewProg" role="tabpanel" aria-labelledby="tabProg" hidden>
+    <div class="psum" id="psum"></div>
+    <div class="mailbar" id="mailbar" hidden>
+      <button type="button" id="mailNow">요약 메일 받기</button>
+      <span id="mailMsg" aria-live="polite"></span>
+    </div>
+    <label class="opt"><input type="checkbox" id="onlyWrong"> 틀린 문항만 보기</label>
+    <div id="secList"></div>
+
+    <section class="gsync" id="gsync" hidden>
+      <h2>구글 시트 동기화</h2>
+      <p class="hint">Apps Script 웹 앱 주소(…/exec)를 붙여 넣고 연결하면 채점 기록이 구글 시트에 자동 저장되고, 다른 기기에서 이 파일을 열어도 같은 기록을 불러옵니다. 기기마다 한 번씩 입력하세요.</p>
+      <div class="row">
+        <input id="gasUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec" aria-label="웹 앱 주소">
+        <button type="button" id="gasSave">연결</button>
+      </div>
+      <div class="bulkbar">
+        <button type="button" id="gasNow" class="plain">지금 불러오기</button>
+        <button type="button" id="gasOff" class="plain">연결 해제</button>
+        <span id="gasMsg" aria-live="polite"></span>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+const BOOKS = [{"id":"wk","title":"완자 기출픽 한국사2","groups":[{"g":"Ⅰ. 일제 식민 통치와 민족 운동","sections":[{"name":"01강 일제의 식민 통치 정책","start":1,"a":["조선 총독부","회사령","치안 유지법","산미 증식 계획","남면북양 정책","무단 통치","토지 조사 사업","신고제","국가 총동원법","여자 정신 근로령",4,5,4,1,4,2,4,2,2,2,"해설 참조",5,2,4,2,5,1,2,1,"‘문화 정치’(민족 분열 통치)",3,5,4,5,3,"해설 참조",2,5,4,2,5,4,1,4,5,5,3,5,5,4,1,5,5,5,3,5,3,"㉠ 식량 배급제, ㉡ 공출 제도",1,1,3,1,4,4,1,4,1]},{"name":"02강 3·1 운동과 대한민국 임시 정부","start":68,"a":["대한 광복회","대조선 국민군단","민족 자결주의","대한민국 임시 정부","교통국","독립 의군부","권업회","2·8 독립 선언","독립 공채","구미 위원부",5,4,1,1,"독립 의군부",4,2,1,5,3,2,5,3,4,5,2,5,5,1,"해설 참조",2,4,3,"해설 참조",4,3,5,2,5,1,4,2]},{"name":"03강 민족 운동의 전개와 분화","start":110,"a":["홍범도","신채호","평양","브나로드 운동","정우회 선언","국민부","나석주","민립 대학 설립 운동","신간회","6·10 만세 운동",2,"(가) 봉오동 전투, (나) 청산리 대첩",4,4,5,5,3,4,4,3,3,5,3,1,2,3,1,5,4,3,4,4,3,2,2,5,5,1,4,3,4,1,"해설 참조",3,1,4,2,2,1,3,"해설 참조",4,1,5]},{"name":"04강 사회·문화의 변화와 대중 운동","start":164,"a":["원산","방정환","백정","백남운","「아리랑」","북촌","암태도 소작 쟁의","근우회","박은식","조선어 연구회",5,3,5,4,5,"농촌 진흥 운동",5,"암태도 소작 쟁의",4,4,5,5,3,1,2,3,4,4,5,1,4,2,2,3,4,4,"해설 참조",5,2,1,3,3]},{"name":"05강 독립 국가 건설을 위한 노력","start":206,"a":["조선 혁명군","민족 혁명당(조선 민족 혁명당)","한국광복군","삼균주의","조선 건국 동맹","한국 독립군","조선 의용대","충칭","김두봉","카이로",1,4,2,3,4,2,3,1,3,2,5,5,5,3,3,"해설 참조",5,2,3,4,3,3,2,5,5,5,1,4,4,5,2,3,"조선 독립 동맹",5,2,2,5,2,5,3,5,2,1,2,4]},{"name":"도전 기출 01~05강","start":261,"a":[3,5,2,4,4,2,5,2,3,1,4,2,2,2,1,3,3,1,1,5,4,3,5,5]}]},{"g":"Ⅱ. 대한민국의 발전","sections":[{"name":"06강 8·15 광복과 대한민국 정부 수립","start":285,"a":["조선 건국 준비 위원회","미소 공동 위원회","좌우 합작 7원칙","5·10 총선거","반민족 행위 처벌법","독립 촉성 중앙 협의회","모스크바 3국 외상 회의","남북 연석회의(남북 협상)","대통령 중심제","유상 매수·유상 분배",3,5,"(가) 미국, (나) 소련",5,2,5,5,4,3,4,4,2,2,4,"해설 참조",4,5,2,2,3,5,4,3,3,5,4,5,3,3,1,1,1,4,3,3,1,"해설 참조",2,2,2,1,5,5,5,5,2,3,5,1,5,"(가) 이승만, (나) 반민족 행위 특별 조사 위원회(반민 특위)",5,2,3,2,4,1]},{"name":"07강 6·25 전쟁과 남북 분단의 고착화","start":352,"a":["조선 의용군","인천 상륙 작전","발췌 개헌","진보당","미국","애치슨 선언","압록강","한미 상호 방위 조약","사사오입 개헌","천리마운동",5,4,"해설 참조",2,5,5,4,3,5,2,5,3,4,"발췌 개헌, 사사오입 개헌",5,5,3,4,4,5,3,1,5,1,1,1,5,1,5,1,4]},{"name":"08강 민주화를 위한 노력","start":393,"a":["4·19 혁명","긴급 조치권","5·16 군사 정변","5·18 민주화 운동","4·13 호헌 조치","일본","국가 재건 최고 회의","김영삼","6월 민주 항쟁","12·12 사태",3,5,2,1,5,5,2,5,5,"해설 참조",2,3,3,2,1,3,3,3,2,4,1,2,2,"통일 주체 국민 회의",4,3,5,1,2,1,5,5,1,5,1,5,2,2,5,5,4,2,3,"해설 참조"]},{"name":"09강 산업화의 성과와 사회·문화의 변화","start":447,"a":["국가","3저 호황","새마을 운동","한강의 기적","정경 유착","삼백 산업","중화학 공업","석유 파동","전태일","전두환 정부",5,4,5,4,4,"해설 참조",3,1,1,4,3,3,5,4,3,5,3,1,3,3,"전태일",3,2,4,4,5,3,1,5,3,5]},{"name":"도전 기출 06~09강","start":488,"a":[4,4,2,3,4,5,3,1,4,2,1,1,4,5,2,1,4,5,1,3,4,2,4,2]}]},{"g":"Ⅲ. 오늘날의 대한민국","sections":[{"name":"10강 6월 민주 항쟁 이후 ~ 외환 위기 극복","start":512,"a":["노태우","외환 위기","자유 무역 협정(FTA)","경제 협력 개발 기구(OECD)","고령화","국제 통화 기금(IMF)","김영삼 정부","김대중","인사 청문회법","금 모으기 운동",5,1,5,"해설 참조",4,2,2,3,3,2,4,5,2,4,1,1,2,2,3,5,2,3,3,1,3,5,2,5,4,3,4,5]},{"name":"11강 한반도 분단 극복과 동아시아 평화","start":554,"a":["김정은","7·4 남북 공동 성명","남북 기본 합의서","10·4 남북 공동 선언","동북공정","김정일","국제 연합(UN)","6·15 남북 공동 선언","노태우 정부","이승만 정부",5,2,3,5,4,4,2,4,1,5,5,2,3,1,5,"해설 참조",4,4,3,3,2,4,"햇볕 정책(대북 화해 협력 정책)",3,1,5,5,2,4,4,"동북공정",4]},{"name":"도전 기출 10~11강","start":596,"a":[2,3,1,5,5,1,5,1,2,4,1,1]}]},{"g":"실전 대비","sections":[{"name":"Ⅰ단원 1회","start":608,"a":[1,2,5,2,"남면북양 정책",5,4,4,2,3,3,2,3,2,4,3,1,1,4,3,4,2]},{"name":"Ⅰ단원 2회","start":630,"a":[5,2,1,4,"해설 참조",4,2,2,1,2,5,"해설 참조",4,5,4,5,4,3,5,3,3]},{"name":"Ⅱ단원 1회","start":651,"a":[2,"모스크바 3국 외상 회의",4,4,4,2,3,"해설 참조",2,5,3,5,3,3,5,"해설 참조",1,3,2,4,4]},{"name":"Ⅱ단원 2회","start":672,"a":[3,2,2,"(가) 이승만, (나) 김구",5,5,5,2,2,2,4,"해설 참조",4,4,2,4,3,4,2,1,4,1,4]},{"name":"Ⅲ단원 1회","start":695,"a":[5,5,1,"(가) 금융 실명제, (나) 지방 자치제",3,"(가) 국민 기초 생활 보장법, (나) 여성부",2,5,5,2,1,2,2,5,4,5,1,2,1]},{"name":"Ⅲ단원 2회","start":714,"a":[4,1,3,3,5,1,4,5,1,"(가) 노동 운동, (나) 농민 운동",5,4,5,3,"해설 참조"]}]}]},{"id":"ws","title":"완자 기출픽 통합사회2","groups":[{"g":"Ⅰ. 인권 보장과 헌법","sections":[{"name":"01강 인권의 의미와 발전 과정","start":1,"a":["인권","시민 혁명","바이마르 헌법","주거권","문화권","불가침성","프랑스 혁명","참정권","세계 인권 선언","환경권",1,5,3,1,"해설 참조",1,1,2,5,1,5,3,4,4,1,3,1,3,5,4,"해설 참조",2,4,5,5,2,2,"해설 참조",3,2,4,4,"잊힐 권리"]},{"name":"02강 헌법의 역할과 시민 참여","start":44,"a":["헌법","사회권","공공복리","복수 정당 제도","시민불복종","참정권","청구권","권력 분립 제도","헌법재판소","대의 민주주의",5,1,5,4,1,4,3,"해설 참조",4,3,1,4,2,2,1,2,4,4,4,3,3,4,"해설 참조",3,3,4,2,"해설 참조",4,1,4,2,3,3,3,5,1,2,5,5,4,4,"해설 참조",2,5,3,4,3,"해설 참조",4,1,3]},{"name":"03강 인권 문제의 양상과 해결","start":106,"a":["소수자","상대적","노동권","35","인권 지수","권력","국가","50%","세계 언론 자유 지수","국제기구",4,2,4,5,2,3,"해설 참조",4,4,3,4,"해설 참조",4,5,5,1,1,1,5,3,3,5,2,1,1,"해설 참조",3]},{"name":"도전 기출 01~03강","start":143,"a":[4,1,3,2,1,3,2,1,5,3,3,3,4,5,4,4]}]},{"g":"Ⅱ. 사회 정의와 불평등","sections":[{"name":"04강 정의의 의미와 실질적 기준","start":159,"a":["분배적","처벌","능력","공정성","사회적 약자","교정적 정의","공리주의","업적","필요","능력",4,4,2,2,1,1,2,4,1,1,3,"갑: 칸트, 을: 베카리아",3,5,"해설 참조",2,5,5,2,2,3,4,"해설 참조",1,2,3,4,"해설 참조",4,2,1,5,3,3,3,3,4,3,4,"해설 참조",1]},{"name":"05강 다양한 정의관의 비교 및 적용","start":210,"a":["자유주의","노직","극단적 이기주의","왈처","공동체주의적","허용","연고적 자아","자유주의적","롤스","집단주의",1,4,3,4,2,1,4,2,1,3,2,4,1,4,"해설 참조",5,4,3,5,4,1,1,5,1,"해설 참조",4]},{"name":"06강 불평등 해결과 정의의 실현","start":246,"a":["사회 및 공간 불평등","성장 거점","사회 보험","공간 불평등","역차별","경제적","사회 계층의 양극화","공공 부조","사회 서비스","적극적 평등 실현 조치",3,1,2,4,1,1,4,"해설 참조",4,2,4,2,3,"해설 참조",3,4,4,3,4,4,1,1,4,"해설 참조",5,5,4,4,5,1,"해설 참조"]},{"name":"도전 기출 04~06강","start":287,"a":[3,3,4,3,2,2,3,1,2,4,5,3,4,4,1,3]}]},{"g":"Ⅲ. 시장경제와 지속가능발전","sections":[{"name":"07강 자본주의의 전개 과정과 경제 체제","start":303,"a":["자본주의","자유방임주의","수정","시장경제 체제","혼합 경제 체제","유통","신자유주의","시장 실패","상업 자본주의","계획경제 체제",1,3,4,5,1,4,5,"해설 참조",1,5,"해설 참조",4,4,5,3,3,4,"해설 참조",4,2,4,2,2]},{"name":"08강 합리적 선택과 경제 주체의 역할","start":336,"a":["합리적 선택","시장 실패","공공재","기업가 정신","윤리적","기회비용","외부 효과","정부","단결권","합리적 소비",4,3,"해설 참조",3,1,4,5,2,3,"해설 참조",2,5,3,4,2,5,2,2,3,1,5,4,5,3,4,4,2,3,5,3,3,2,2,"해설 참조",4,4,5,2,5,3,4]},{"name":"09강 자산 관리와 금융 생활","start":387,"a":["예금","주식","안전성","실물","증가","정기 적금","채권","연금","유동성","안전성",4,4,1,4,1,5,3,5,1,2,2,"해설 참조",5,3,5,3,3,2,1,4,4,5,5]},{"name":"10강 국제 무역과 지속가능발전","start":420,"a":["국제 분업","생산 요소","기회비용","국제 무역","공정","무역","비교 우위","기업","자유 무역","대체 에너지",4,1,"생산비",1,3,2,5,"해설 참조",1,1,2,3,2,4,4,4,2,2,4,3,1,4,5,2,2,3,5,"공정 무역",2,3]},{"name":"도전 기출 07~10강","start":460,"a":[4,5,5,4,5,2,4,1,3,1,5,2,5,2,5,2]}]},{"g":"Ⅳ. 세계화와 평화","sections":[{"name":"11강 세계화의 양상과 문제의 해결","start":476,"a":["세계화","세계도시","공간적","획일화","특수","장소 마케팅","다국적 기업","본사","개발 도상국","보편 윤리",4,1,1,3,5,"해설 참조",1,3,5,2,3,3,2,4,4,1,"해설 참조",1,4,3,5,1,2,4,2,1,"해설 참조",2,4,1,"해설 참조",5,"(가): 공정 무역, (나) 공정 여행",3,2]},{"name":"12강 국제 사회와 세계 평화","start":521,"a":["소극적","국가","통일","동북 공정","동아시아","갈퉁","국제기구","비정부 기구","분단 비용","일본",3,3,"해설 참조",2,1,5,2,5,"해설 참조",2,3,3,1,1,4,5,2,1,2,3,3,"해설 참조",4,1,2,4,4,"해설 참조",1,4,4,3,"동북 공정",3,2,1,2,1,4,2,5]},{"name":"도전 기출 11~12강","start":572,"a":[2,4,3,1,5,5,5,4]}]},{"g":"Ⅴ. 미래와 지속가능한 삶","sections":[{"name":"13강 세계의 인구와 인구 문제","start":580,"a":["선진국","인구 피라미드","경제적","인구 과잉","저출생","사회·경제적","도시","비경제적 이동","유출국","고령화",2,5,2,5,"해설 참조",5,1,"(가): 선진국, (나): 방추, (다): 개발 도상국, (라): 피라미드",2,3,3,1,1,2,4,5,4,"(가): 난민, (나): 노동자",3,5,2,3,5,4,1,"해설 참조",4]},{"name":"14강 자원과 지속가능한 발전 ~ 미래 사회","start":617,"a":["자원","가변성","석유","기후변화","지속가능한 발전","석탄","천연가스","인위적","온실가스 배출 거래권 제도","윤리적 소비",3,3,2,5,4,1,5,2,4,2,2,"해설 참조",2,3,"자원 민족주의",5,4,1,3,4,3,"파리 협정",2,2,2,4,"해설 참조",2,1,3,3]},{"name":"도전 기출 13~14강","start":658,"a":[5,1,5,3,4,4,5,2]}]},{"g":"실전 대비","sections":[{"name":"Ⅰ단원 1회","start":666,"a":[5,5,3,4,5,4,3,"해설 참조",5,"(가): 환경권, (나): 주거권",4,5,4,3,4,2,3,1,5,3,2,5,3]},{"name":"Ⅰ단원 2회","start":689,"a":[2,1,"해설 참조",2,5,2,5,2,3,1,1,5,2,2,3,5,5,5,5,"해설 참조",2,2,1,3]},{"name":"Ⅱ단원 1회","start":713,"a":[4,5,"(가): 응보주의, (나): 공리주의",1,3,2,3,3,5,5,5,2,4,1,5]},{"name":"Ⅱ단원 2회","start":728,"a":["㉠: 분배적 정의, ㉡: 교정적 정의",4,"해설 참조",4,1,3,3,4,5,3,4,"공간 불평등",3,2]},{"name":"Ⅲ단원 1회","start":742,"a":[2,2,5,"해설 참조",4,4,3,2,4,4,4,4,4,3,5,"해설 참조",5,5,5,2,5,"㉠: 소비자, ㉡: 기업",3]},{"name":"Ⅲ단원 2회","start":765,"a":[5,1,1,2,1,4,"해설 참조",3,5,4,4,3,1,"해설 참조",4,1,1,"해설 참조",1,4,4,"해설 참조"]},{"name":"Ⅳ단원 1회","start":787,"a":[2,"장소 마케팅",2,1,4,3,2,5,4,2]},{"name":"Ⅳ단원 2회","start":797,"a":[4,3,4,5,"해설 참조",5,4,2,2,4]},{"name":"Ⅴ단원 1회","start":807,"a":[4,4,5,1,5,2,"해설 참조",5,4]},{"name":"Ⅴ단원 2회","start":816,"a":[1,1,4,3,3,4,5,"가채 연수",1,2]}]}]},{"id":"zk","title":"자이스토리 한국사2","groups":[{"g":"Ⅰ. 일제 식민 통치와 민족 운동","sections":[{"name":"01 일제의 식민지 통치 정책","start":1,"a":[4,1,"중추원",3,"해설 참조","해설 참조",2,2,3,"해설 참조",1,2,3,4,3,2,"황국 신민 서사",4,2,5,"애국반",5,5,"해설 참조",1,5,5,1,4,4,4,3]},{"name":"02 3·1 운동과 대한민국 임시 정부","start":1,"a":["(1) (가) 독립 의군부, (나) 대한 광복회 (2) 해설 참조",3,1,1,3,5,1,"해설 참조",2,5,3,3,5,"해설 참조",2,5,2,4,1,3,2]},{"name":"03 민족 운동의 전개와 분화","start":1,"a":[4,4,5,"해설 참조",3,4,"해설 참조",5,4,2,4,1,1,"해설 참조",2,4,2,5,"해설 참조",2,1,"해설 참조",2,3,2,2,4,4,3,5,5]},{"name":"04 사회·문화의 변화와 대중 운동","start":1,"a":[1,"농촌 진흥 운동",3,3,"해설 참조",3,4,"근우회","해설 참조",1,"해설 참조","해설 참조","(가) 정체성론, (나) 타율성론, (다) 당파성론",1,5,4,2,1,2,2,4,2,5,3,3,4]},{"name":"05 독립 국가 건설 노력","start":1,"a":[2,5,"해설 참조",4,5,2,5,5,3,"한국광복군","해설 참조",5,"해설 참조","삼균주의",1,4,1,4,4,5,5,3,5]},{"name":"대단원 마무리 문제","start":1,"a":["조선 총독","해설 참조",4,2,"황국 신민 서사 암송, 신사 참배, 궁성 요배, 창씨개명",1,"국민 대표 회의","해설 참조",1,5,2,1,2,1,"(나)-(다)-(가)-(라)","해설 참조",3,4,4,4,"전형필",2,"한국광복군","해설 참조",5]}]},{"g":"Ⅱ. 대한민국의 발전","sections":[{"name":"06 냉전 체제와 대한민국 정부 수립","start":1,"a":[3,"해설 참조","미·소 공동 위원회","해설 참조",2,5,"해설 참조",1,4,5,2,2,2,1,4,1,4,"해설 참조",1,4,3,3,2,1,2,2,2]},{"name":"07 6·25 전쟁과 남북 분단의 고착화","start":1,"a":[3,4,"해설 참조",3,3,4,"한·미 상호 방위 조약",1,1,1,"해설 참조",2,"해설 참조",5,"(가) 조봉암, (나) 진보당","해설 참조",4,4,2,2,3,4,1,4]},{"name":"08 민주화를 위한 노력","start":1,"a":[1,4,3,5,"해설 참조",4,"한·일 협정 혹은 한·일 기본 조약","해설 참조",2,"해설 참조","해설 참조",2,"통일 주체 국민 회의","해설 참조",1,5,5,3,2,2,"해설 참조","박종철",2,3,3,4,5,1,2,3,4]},{"name":"09 산업화의 성과와 사회·문화의 변화","start":1,"a":[1,1,4,2,"해설 참조",4,"해설 참조","해설 참조",3,3,4,"해설 참조",4,2,3,3,1,"해설 참조",3,5,3,2,4,3,2,5]},{"name":"대단원 마무리 문제","start":1,"a":["조선 건국 준비 위원회","해설 참조",2,1,1,5,2,"해설 참조",5,4,"애치슨 라인",4,1,3,2,"(1) (가) 신한 민주당, (2) 해설 참조",5,4,"(가)-(다)-(나)-(라)",4,4,3,"해설 참조",3,5]}]},{"g":"Ⅲ. 오늘날의 대한민국","sections":[{"name":"10 6월 민주 항쟁 이후의 민주화 과정","start":1,"a":[1,"해설 참조",4,"해설 참조",3,5,4,5,3,3,2,5,1,4,1,4]},{"name":"11 외환 위기 극복과 사회·문화의 변동","start":1,"a":["우루과이 라운드",5,3,"해설 참조","해설 참조",3,3,5,"해설 참조","다문화","해설 참조",4,3,1,5,3,1,5]},{"name":"12 한반도 분단 극복과 동아시아 평화","start":1,"a":[5,1,"해설 참조",1,2,3,5,"해설 참조",4,1,3,"해설 참조",3,3,2,"10·4 남북 공동 선언(남북 관계 발전과 평화 번영을 위한 선언), 노무현 정부",4,4,"(1) 독도, (2) 해설 참조",4,3,1,4,5,5,1]},{"name":"대단원 마무리 문제","start":1,"a":[4,4,"촛불 집회(시위)",1,2,"해설 참조",1,4,3,2,2,3,"해설 참조","해설 참조",1]}]},{"g":"단원별 TEST","sections":[{"name":"TEST 01","start":1,"a":[1,3,2,2,3,2,2,4,"(1) 회사령 (2) 해설 참조","해설 참조","해설 참조"]},{"name":"TEST 02","start":1,"a":[4,5,5,3,1,5,4,"대한인 국민회","해설 참조","해설 참조"]},{"name":"TEST 03","start":1,"a":[1,4,3,5,3,2,4,"해설 참조","해설 참조","해설 참조"]},{"name":"TEST 04","start":1,"a":[4,1,2,2,1,2,5,"(1) 백정 (2) 해설 참조","해설 참조","해설 참조"]},{"name":"TEST 05","start":1,"a":[5,1,3,1,4,1,2,"해설 참조","(가) 대한민국 건국 강령, (나) 삼균주의","해설 참조"]},{"name":"TEST 06","start":1,"a":[1,4,2,5,5,5,"(가) 한국 민주당, (나) 한국 독립당","해설 참조","해설 참조","(1) 반민족 행위 특별 조사 위원회(반민 특위), (2) 해설 참조"]},{"name":"TEST 07","start":1,"a":[5,3,3,5,4,3,2,"해설 참조","해설 참조","국민 보도 연맹"]},{"name":"TEST 08","start":1,"a":[2,5,3,5,2,4,2,"해설 참조","해설 참조","(1) 5·18 민주화 운동, (2) 해설 참조"]},{"name":"TEST 09","start":1,"a":[2,4,3,1,4,1,"저유가, 저달러, 저금리","해설 참조","해설 참조","보도 지침"]},{"name":"TEST 10","start":1,"a":[3,5,5,1,1,2,3,"북방 외교","㉠ 김대중, ㉡ 해설 참조","(가) 우루과이 라운드, (나) 자유 무역 협정(FTA)"]},{"name":"TEST 11","start":1,"a":[2,5,4,5,3,4,3,"해설 참조","(1) 자유 무역 협정(FTA), (2) 해설 참조","해설 참조"]},{"name":"TEST 12","start":1,"a":[3,2,4,2,4,3,3,"선군 정치","(가) 남북 고위급 회담, (나) 해설 참조","해설 참조"]}]}]},{"id":"zt","title":"자이스토리 통합사회2","groups":[{"g":"Ⅰ. 인권 보장과 헌법","sections":[{"name":"01 인권의 의미와 발전 과정","start":1,"a":[4,3,4,4,"해설 참조",2,5,2,4,3,"해설 참조",1,2,2,5,2,"(가) 환경권, (나) 주거권, (다) 안전권","해설 참조",5,3,4,5]},{"name":"02 헌법의 역할과 시민 참여","start":1,"a":[2,5,4,4,4,"해설 참조",3,4,"해설 참조",5,1,2,3,1,"해설 참조",2,1,1,1,2]},{"name":"03 인권 문제 해결을 위한 노력","start":1,"a":[5,5,5,2,2,"4. 근로 시간, 6. 임금 조항","해설 참조",1,5,"해설 참조",1,4,3,5]},{"name":"대단원 마무리 문제","start":1,"a":[4,3,4,4,4,4,2,5,2,1,3,5,1,4,4,2,1,"계몽 사상, 사회 계약설, 천부 인권 사상","해설 참조","해설 참조","해설 참조","3개","해설 참조"]},{"name":"수능 대비 기출 문제","start":1,"a":[2,2,3,3,1,5]}]},{"g":"Ⅱ. 사회 정의와 불평등","sections":[{"name":"04 정의의 의미와 기준, 다양한 정의관","start":1,"a":[4,5,"해설 참조",1,3,3,2,3,2,2,3,"해설 참조",3,3,4,4,4,"해설 참조",5,2,"해설 참조",4,1,4]},{"name":"05 불평등 해결과 정의의 실현","start":1,"a":[4,4,"해설 참조",3,5,4,5,"해설 참조",5,4,1,2,4,5,5,"해설 참조",5,"해설 참조",3,4,3]},{"name":"대단원 마무리 문제","start":1,"a":[2,5,3,2,1,3,5,3,5,2,2,2,3,2,5,1,"자유주의적 정의관","해설 참조","해설 참조","해설 참조"]},{"name":"수능 대비 기출 문제","start":1,"a":[2,2,5,3,1,2]}]},{"g":"Ⅲ. 시장 경제와 지속가능발전","sections":[{"name":"06 자본주의의 전개 과정과 경제 체제","start":1,"a":[3,5,4,1,"해설 참조",1,2,"해설 참조",4,1,5,5,4,"해설 참조",3,5,1,3,3,5]},{"name":"07 합리적 선택과 경제 주체의 역할","start":1,"a":[5,5,2,4,"해설 참조",2,2,3,3,2,"해설 참조",4,3,1,5,4,"해설 참조",2,3,5,1]},{"name":"08 자산 관리와 금융 생활","start":1,"a":[5,5,5,4,4,4,1,"해설 참조",3,1,1,"㉠ 1점, ㉡ 3점",5,4,2,"해설 참조",4,4,2,4]},{"name":"09 국제무역과 지속가능발전","start":1,"a":[2,2,4,5,1,"A재 갑국, B재 갑국","해설 참조",5,3,5,2,2,3,"해설 참조","규모의 경제",3,2,5]},{"name":"대단원 마무리 문제","start":1,"a":[2,4,5,2,5,2,1,1,5,2,5,3,3,5,4,5,"(가) 수정 자본주의, (나) 신자유주의","해설 참조","자기 주도 학습 8만 원, 인터넷 강의 15만 원, 방과 후 수업 9만 원","해설 참조","안전성, 수익성, 유동성","해설 참조","해설 참조","60달러"]},{"name":"수능 대비 기출 문제","start":1,"a":[1,3,5,4,5,5]}]},{"g":"Ⅳ. 세계화와 평화","sections":[{"name":"10 세계화의 양상과 문제","start":1,"a":[4,5,1,1,2,4,2,"해설 참조",1,4,2,"해설 참조",2,4]},{"name":"11 평화를 위한 국제 사회의 노력","start":1,"a":[4,2,5,2,"해설 참조",4,3,2,4,4,"(가) 정부 간 국제기구, (나) 국제 비정부 기구","해설 참조",3,4,4]},{"name":"12 남북 분단 및 동아시아의 역사 갈등","start":1,"a":[4,1,3,2,"해설 참조",2,4,5,5,1,2,4,2,4,5,2,"동북공정","해설 참조",1,2]},{"name":"대단원 마무리 문제","start":1,"a":[2,4,2,4,1,3,3,1,3,1,5,4,4,3,1,5,2,"해설 참조","해설 참조","해설 참조","해설 참조","해설 참조","해설 참조"]},{"name":"수능 대비 기출 문제","start":1,"a":[1,3,3,4,1,2]}]},{"g":"Ⅴ. 미래와 지속가능한 삶","sections":[{"name":"13 세계의 인구와 인구 문제","start":1,"a":[3,2,"해설 참조",4,4,5,1,5,2,4,"경제적 이동","해설 참조",2,4,4,3,1,"해설 참조",5,1,4]},{"name":"14 에너지 자원과 지속가능한 발전","start":1,"a":[4,2,"해설 참조",1,4,5,2,3,4,"해설 참조",5,1,2,3,2,2,"해설 참조",2,5,1]},{"name":"15 미래 사회와 세계시민으로서의 삶","start":1,"a":[1,2,2,"해설 참조",4,4,2,4]},{"name":"대단원 마무리 문제","start":1,"a":[2,1,1,3,3,2,2,5,5,4,1,4,5,1,4,1,4,"(가) 프랑스, (나) 카메룬","해설 참조","(가) 천연가스, (나) 석탄, (다) 석유","해설 참조","해설 참조","해설 참조"]},{"name":"수능 대비 기출 문제","start":1,"a":[2,2,4,1,3,5]}]},{"g":"특별","sections":[{"name":"2028 수능 신유형 융합 문제","start":1,"a":[5,3,2,2,3,5,3,4,4,2,5,1]},{"name":"2028 수능 1차 예시문항","start":1,"a":[4,3,5,4,2,2,1,1,3,5,2,4,2,5]},{"name":"2028 수능 2차 예시문항","start":1,"a":[5,4,4,2,3,5,4,3,2,2,1,3,2,3,2,1,3,3,5,1,5,4,2,2,1]}]},{"g":"단원별 TEST","sections":[{"name":"TEST 01","start":1,"a":[5,4,4,1,3,"해설 참조",3,5,"(가) 안전권, (나) 문화권",3]},{"name":"TEST 02","start":1,"a":[5,2,2,1,"해설 참조",3,4,5,1,"해설 참조"]},{"name":"TEST 03","start":1,"a":[1,3,"해설 참조",5,2,3,4,5,4,"해설 참조"]},{"name":"TEST 04","start":1,"a":[5,1,2,"업적","해설 참조",5,5,5,4,"해설 참조"]},{"name":"TEST 05","start":1,"a":[4,2,2,2,"해설 참조",4,5,4,"여성 할당제, 장애인 의무 고용 제도, 대학 입시의 기회 균등 전형 등","해설 참조"]},{"name":"TEST 06","start":1,"a":[3,4,4,2,"해설 참조",1,3,4,2,"해설 참조"]},{"name":"TEST 07","start":1,"a":[1,5,4,4,"해설 참조",4,2,2,2,"해설 참조"]},{"name":"TEST 08","start":1,"a":[3,5,4,3,"해설 참조",1,2,3,4,"해설 참조"]},{"name":"TEST 09","start":1,"a":[5,4,5,2,4,"갑국: 청소기 2단위, 을국: 청소기 1/2단위","해설 참조",5,"자유 무역 협정(FTA)",4]},{"name":"TEST 10","start":1,"a":[3,3,2,4,"해설 참조",4,2,5,4,"해설 참조"]},{"name":"TEST 11","start":1,"a":[2,5,"해설 참조",3,1,3,3,1,4,"해설 참조"]},{"name":"TEST 12","start":1,"a":[1,4,4,3,"해설 참조",2,2,"해설 참조",5,4]},{"name":"TEST 13","start":1,"a":[1,4,3,3,5,2,3,2,"(가) 인도, (나) 덴마크","해설 참조"]},{"name":"TEST 14","start":1,"a":[2,3,"해설 참조",4,"해설 참조",2,4,5,2,2]},{"name":"TEST 15","start":1,"a":[2,2,"해설 참조",5,1,5,2,"해설 참조",5,1]}]}]},{"id":"g1","title":"응가사회","pub":"정답표 1","subj":"응가사회","groups":[{"g":"반복유형","sections":[{"name":"018~025쪽","start":1,"a":[4,4,4,2,4,4,2,2,2,2,4,4,4,2,2,5,2,1,4,4,1,1,2,1,4,3,2,3,2,1,5]},{"name":"037~045쪽","start":1,"a":[4,3,5,5,4,3,5,3,5,2,4,5,2,2,5,1,1,2,1,5,2,1,1,4,1,4,2,5,1,1,3,3,1,3,1,3]},{"name":"056~061쪽","start":1,"a":[2,3,1,2,5,4,5,3,4,4,2,5,5,2,5,1,2,1,3,1,1,3,5]},{"name":"075~083쪽","start":1,"a":[3,5,3,5,2,1,2,4,4,1,2,5,5,2,4,1,2,3,3,4,1,2,4,3,2,5,1,1,2,5,5,4,4,5,1,2,4]},{"name":"095~103쪽","start":1,"a":[1,5,2,4,2,4,5,1,2,4,5,4,2,2,4,4,4,3,5,4,4,2,1,3,4,[2,4],1,4,1,3,5,2,2,4,5]}]},{"g":"수능문제","sections":[{"name":"026쪽","start":1,"a":[5,2]},{"name":"046쪽","start":1,"a":[1,4]},{"name":"062쪽","start":1,"a":[3]},{"name":"084쪽","start":1,"a":[4,2]},{"name":"104쪽","start":1,"a":[4,1]}]}]},{"id":"g2","title":"응가역사","pub":"정답표 2","subj":"응가역사","groups":[{"g":"반복유형","sections":[{"name":"019~026쪽","start":1,"a":[2,3,1,1,4,2,3,2,4,4,3,1,2,5,5,5,2,2,1,1,4,5,3,1,1,5,3,3,2,1,4,4]},{"name":"039~047쪽","start":1,"a":[1,1,5,3,4,5,3,1,4,4,4,1,5,3,4,3,4,4,3,5,4,1,3,1,3,5,5,5,3,4,4,1,3,5]},{"name":"066~077쪽","start":1,"a":[2,2,2,1,1,5,3,5,5,3,2,2,2,3,1,4,4,5,1,1,3,1,4,3,5,3,3,3,2,1,4,4,1,2,1,5,3,1,4,4,2,4,2,1,5,3,5]},{"name":"090~097쪽","start":1,"a":[3,3,2,2,4,4,1,3,4,5,4,2,4,3,3,1,1,5,1,4,4,5,2,1,5,2,1,5,5,3,4,5,2,1]},{"name":"109~115쪽","start":1,"a":[4,4,1,5,5,4,4,4,4,3,1,2,3,4,2,4,1,5,3,5,4,5,3]}]}]}];
+const C = ["①","②","③","④","⑤"];
+const $ = id => document.getElementById(id);
+let bi = 0, si = 0, n = 1, mine = null, shown = false, lastBulk = null;
+
+/* ---- 기록 저장소: 단원마다 {문항번호: "ok"|"no"} ---- */
+const ST = {};
+const sid = (b, s) => BOOKS[b].id + "-" + s;
+const lkey = id => { const [b, s] = id.split("-"); return "ans:" + b + ":" + s; };
+BOOKS.forEach((b, i) => b.groups.flatMap(g => g.sections).forEach((_, s) => {
+  const id = sid(i, s);
+  try { ST[id] = JSON.parse(localStorage.getItem(lkey(id))) || {}; } catch(e){ ST[id] = {}; }
+}));
+const S = () => ST[sid(bi, si)] || (ST[sid(bi, si)] = {});
+function cache(id){ try { localStorage.setItem(lkey(id), JSON.stringify(ST[id] || {})); } catch(e){} }
+
+let db = null, readOnly = false;
+const ver = {}, timers = {}, busy = {};
+function setSync(){
+  const el = $("sync"), saving = Object.keys(ver).length > 0;
+  const mb = document.getElementById("mailbar"); if (mb) mb.hidden = !(!db && gas && !IN_VIEWER);
+  if (!db){
+    const m = { off: ["", "이 브라우저에만 저장 · 동기화 설정"], ok: ["on", "구글 시트와 동기화됨"],
+                busy: ["busy", "구글 시트에 저장 중…"], err: ["err", "구글 시트 연결 안 됨 · 이 브라우저에 저장"] }[gas ? gasState : "off"];
+    el.className = "sync " + m[0]; el.textContent = m[1]; return;
+  }
+  if (readOnly){ el.className = "sync"; el.textContent = "보기 전용 · 이 브라우저에 저장"; return; }
+  el.className = "sync " + (saving ? "busy" : "on");
+  el.textContent = saving ? "저장 중…" : "모든 기기에 동기화됨";
+}
+function persist(id){
+  cache(id);
+  if (!db && gas){ gasQueue(id); return; }
+  if (!db || readOnly) return;
+  ver[id] = (ver[id] || 0) + 1;
+  clearTimeout(timers[id]);
+  timers[id] = setTimeout(() => flush(id), 500);
+  setSync();
+}
+async function flush(id){
+  if (busy[id]){ timers[id] = setTimeout(() => flush(id), 300); return; }
+  busy[id] = true; const v = ver[id];
+  const body = ST[id] || {}, ref = db.doc("progress/" + id);
+  try {
+    if (Object.keys(body).length) await ref.set({ s: body }); else await ref.delete();
+  } catch(e){
+    if (e && e.code === "unavailable"){ busy[id] = false; timers[id] = setTimeout(() => flush(id), 1500 + Math.random()*1000); return; }
+    if (e && (e.code === "invalid_argument" || e.code === "revoked" || e.code === "not_granted")) readOnly = true;
+  }
+  busy[id] = false;
+  if (ver[id] === v) delete ver[id];
+  setSync();
+}
+function refreshAll(){ paintNums(); paintBooks(); if (!$("viewProg").hidden) renderProg(); }
+
+/* ---- 구글 시트(Apps Script) 동기화: HTML 파일로 열었을 때 ---- */
+const IN_VIEWER = !!(window.claude && window.claude.use);
+let gas = null, gasState = "off", gasTimer = null, gasBusy = false;
+const gver = {};
+let pend = new Set();
+const DEFAULT_GAS = "https://script.google.com/macros/s/AKfycbzwUGDOfoBCJbPQx96HCMN8vin0OPCcREB-kYGv-yiDVGkHIOlapcL85oasQRA71NdX/exec";
+try { gas = localStorage.getItem("gasUrl") || (localStorage.getItem("gasOff") ? null : DEFAULT_GAS); } catch(e){ gas = DEFAULT_GAS; }
+try { pend = new Set(JSON.parse(localStorage.getItem("gasPend")) || []); } catch(e){}
+const savePend = () => { try { localStorage.setItem("gasPend", JSON.stringify([...pend])); } catch(e){} };
+function metaOf(id){
+  const [b, s] = id.split("-"), i = BOOKS.findIndex(x => x.id === b), x = secsOf(i)[+s];
+  return { book: BOOKS[i].title, name: x.name, total: x.a.length };
+}
+function gasQueue(id){
+  pend.add(id); savePend(); gver[id] = (gver[id] || 0) + 1;
+  clearTimeout(gasTimer); gasTimer = setTimeout(gasFlush, 1200);
+  if (gasState !== "err") gasState = "busy";
+  setSync();
+}
+async function gasFlush(){
+  if (!gas || !pend.size) return;
+  if (gasBusy){ clearTimeout(gasTimer); gasTimer = setTimeout(gasFlush, 800); return; }
+  gasBusy = true;
+  const ids = [...pend], sent = {};
+  ids.forEach(id => sent[id] = gver[id] || 0);
+  const items = ids.map(id => Object.assign({ id, s: ST[id] || {} }, metaOf(id)));
+  try {
+    const r = await fetch(gas, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ items }) });
+    const j = await r.json();
+    if (!j || !j.ok) throw new Error("save failed");
+    ids.forEach(id => { if ((gver[id] || 0) === sent[id]) pend.delete(id); });
+    savePend();
+    gasState = pend.size ? "busy" : "ok";
+  } catch(e){ gasState = "err"; }
+  gasBusy = false; setSync();
+  if (pend.size && gasState !== "err"){ clearTimeout(gasTimer); gasTimer = setTimeout(gasFlush, 500); }
+}
+async function gasPull(){
+  if (!gas) return false;
+  try {
+    const r = await fetch(gas + (gas.includes("?") ? "&" : "?") + "t=" + Date.now());
+    const j = await r.json();
+    if (!j || !j.ok) throw new Error("load failed");
+    const remote = j.data || {};
+    let first = true;
+    try { first = localStorage.getItem("gasSynced") !== gas; } catch(e){}
+    Object.keys(ST).forEach(id => {
+      if (pend.has(id)) return;
+      const rs = remote[id] || {};
+      if (first){
+        const m = Object.assign({}, ST[id], rs);
+        ST[id] = m; cache(id);
+        if (Object.keys(m).length !== Object.keys(rs).length) gasQueue(id);
+      } else { ST[id] = Object.assign({}, rs); cache(id); }
+    });
+    try { localStorage.setItem("gasSynced", gas); } catch(e){}
+    gasState = pend.size ? "busy" : "ok";
+    setSync(); refreshAll();
+    if (pend.size) gasFlush();
+    return true;
+  } catch(e){ gasState = "err"; setSync(); return false; }
+}
+async function gasConnect(){
+  const url = $("gasUrl").value.trim(), msg = $("gasMsg");
+  if (!/^https?:\/\/\S+\/exec(\?\S*)?$/.test(url)){ msg.className = "bad"; msg.textContent = "주소는 …/exec 로 끝나야 합니다. 배포 후 받은 웹 앱 URL을 그대로 붙여 넣으세요."; return; }
+  gas = url; try { localStorage.setItem("gasUrl", url); localStorage.removeItem("gasSynced"); localStorage.removeItem("gasOff"); } catch(e){}
+  msg.className = ""; msg.textContent = "연결하는 중…";
+  const ok = await gasPull();
+  msg.className = ok ? "ok" : "bad";
+  msg.textContent = ok ? "연결했습니다. 이제 채점 기록이 구글 시트에 자동 저장됩니다." : "연결하지 못했습니다. 주소와 배포 설정(액세스 권한: 모든 사용자)을 확인하세요.";
+}
+function gasDisconnect(){
+  gas = null; gasState = "off"; pend.clear(); savePend();
+  try { localStorage.removeItem("gasUrl"); localStorage.removeItem("gasSynced"); localStorage.setItem("gasOff", "1"); } catch(e){}
+  $("gasUrl").value = ""; $("gasMsg").className = ""; $("gasMsg").textContent = "연결을 해제했습니다. 기록은 이 브라우저에 남아 있습니다.";
+  setSync();
+}
+
+async function connect(){
+  if (!window.claude || !claude.use) return;
+  db = await claude.use("db");
+  if (!db) return;
+  setSync();
+  let first = true;
+  db.collection("progress").onSnapshot(snap => {
+    if (first && snap.metadata.fromCache) { applyRemote(snap, false); return; }
+    if (first){
+      first = false;
+      const remote = {};
+      snap.docs.forEach(d => { remote[d.id] = ((d.data() || {}).s) || {}; });
+      Object.keys(ST).forEach(id => {
+        if (ver[id]) return;
+        const r = remote[id] || {}, l = ST[id] || {};
+        const merged = Object.assign({}, l, r);
+        ST[id] = merged; cache(id);
+        if (Object.keys(merged).length !== Object.keys(r).length) persist(id);
+      });
+      refreshAll(); return;
+    }
+    applyRemote(snap, true);
+  }, () => { db = null; setSync(); });
+}
+function applyRemote(snap, withRemovals){
+  let changed = false;
+  snap.docChanges().forEach(ch => {
+    const id = ch.doc.id;
+    if (ver[id] || !(id in ST)) return;
+    if (ch.type === "removed"){ if (withRemovals){ ST[id] = {}; cache(id); changed = true; } return; }
+    ST[id] = Object.assign({}, ((ch.doc.data() || {}).s) || {}); cache(id); changed = true;
+  });
+  if (changed) refreshAll();
+}
+
+/* ---- 보조 ---- */
+const book = () => BOOKS[bi];
+const secsOf = b => BOOKS[b].groups.flatMap(g => g.sections);
+const secs = () => secsOf(bi);
+const sec = () => secs()[si];
+const padB = (b, x) => String(x).padStart(BOOKS[b].id.startsWith("w") ? 3 : 2, "0");
+const pad = x => padB(bi, x);
+const raw = k => sec().a[k - sec().start];
+const isText = v => typeof v === "string";
+const ans = k => { const v = raw(k); return Array.isArray(v) ? v : [v]; };
+const fmt = arr => arr.map(x => C[x-1]).join("·");
+function count(b, s){
+  const st = ST[sid(b, s)] || {}; let ok = 0, no = 0;
+  for (const k in st){ if (st[k] === "ok") ok++; else if (st[k] === "no") no++; }
+  return { ok, no, total: secsOf(b)[s].a.length };
+}
+function countBook(b){
+  const r = { ok: 0, no: 0, total: 0 };
+  secsOf(b).forEach((_, s) => { const c = count(b, s); r.ok += c.ok; r.no += c.no; r.total += c.total; });
+  return r;
+}
+const pct = (x, t) => t ? Math.round(x / t * 100) : 0;
+const barHTML = c => `<span class="bar" aria-hidden="true"><i style="width:${c.ok / c.total * 100}%"></i><b style="width:${c.no / c.total * 100}%"></b></span>`;
+
+/* ---- 교재 버튼 ---- */
+function buildBooks(){
+  BOOKS.forEach((b,i) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.onclick = () => selectBook(i);
+    $("books").appendChild(btn);
+  });
+  paintBooks();
+}
+function paintBooks(){
+  [...$("books").children].forEach((btn, i) => {
+    const b = BOOKS[i], c = countBook(i), done = c.ok + c.no;
+    const pub = b.pub || (b.title.startsWith("완자") ? "완자 기출픽" : "자이스토리");
+    const subj = b.subj || (b.title.includes("한국사") ? "한국사2" : "통합사회2");
+    btn.innerHTML = `<small>${pub}</small>${subj}<span class="bk-meta">${done} / ${c.total} · ${pct(done, c.total)}%</span>${barHTML(c)}`;
+    btn.setAttribute("aria-pressed", i === bi);
+    btn.setAttribute("aria-label", `${pub} ${subj}, ${c.total}문항 중 ${done}문항 풂`);
+  });
+}
+function selectBook(i){
+  bi = i; paintBooks();
+  const s = $("sec"); s.innerHTML = ""; let idx = 0;
+  book().groups.forEach(g => {
+    const og = document.createElement("optgroup"); og.label = g.g;
+    g.sections.forEach(x => {
+      const o = document.createElement("option"); o.value = idx++;
+      o.textContent = `${x.name} (${pad(x.start)}~${pad(x.start + x.a.length - 1)})`;
+      og.appendChild(o);
+    });
+    s.appendChild(og);
+  });
+  selectSec(0);
+  if (!$("viewProg").hidden) renderProg();
+}
+function selectSec(i, q){
+  si = i; $("sec").value = i; disarm(); fillRange();
+  const s = sec(), last = s.start + s.a.length - 1;
+  const obj = s.a.filter(v => !isText(v)).length;
+  $("setName").textContent = s.name;
+  $("setCount").textContent = `${s.a.length}문항` + (obj < s.a.length ? ` · 객관식 ${obj}` : "");
+  const box = $("nums"); box.innerHTML = "";
+  for (let k = s.start; k <= last; k++){
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = pad(k);
+    b.onclick = () => setQ(k);
+    box.appendChild(b);
+  }
+  bulkAns = {}; bulkPos = 0; $("bulkMsg").textContent = "";
+  setQ(q || s.start); grade();
+}
+function setQ(k){ n = k; mine = null; shown = false; render(); }
+function disarm(){ clearTimeout(rngTimer); const b = $("rOk"); if (b){ b.classList.remove("arm"); b.textContent = "정답 처리"; } }
+function paintNums(){
+  const s = sec(), st = S();
+  [...$("nums").children].forEach((b,i) => {
+    const k = s.start + i, v = st[k];
+    b.className = (v || "") + (isText(s.a[i]) ? " t" : "");
+    b.setAttribute("aria-current", k === n);
+    b.setAttribute("aria-label", `${k}번` + (isText(s.a[i]) ? " 주관식" : "") + (v==="ok" ? " 맞음" : v==="no" ? " 틀림" : ""));
+  });
+}
+function record(k, ok){
+  const st = S();
+  if (st[k]) return false;
+  st[k] = ok ? "ok" : "no"; persist(sid(bi, si)); paintBooks();
+  return true;
+}
+function render(){
+  $("qno").textContent = pad(n);
+  const v = raw(n), area = $("area"), vd = $("verdict");
+  area.innerHTML = "";
+  ["show","selfOk","selfNo"].forEach(id => $(id).hidden = true);
+  if (isText(v)){
+    area.className = "subj";
+    area.innerHTML = `<span class="tag">주관식 · 서술형 문항</span>` +
+      (shown ? `<span class="ans"></span>` : `<span class="hidden">● ● ● ●</span>`);
+    if (shown) area.querySelector(".ans").textContent = v;
+    $("choice").hidden = false;
+    if (!shown){ $("show").hidden = false; vd.className = "verdict"; vd.textContent = `${pad(n)}번 — 먼저 답을 써 본 뒤 정답을 확인하세요`; }
+    else if (v === "해설 참조"){ $("selfOk").hidden = $("selfNo").hidden = false; vd.className="verdict"; vd.textContent = "해설지의 모범 답안과 비교해 스스로 채점하세요"; }
+    else { $("selfOk").hidden = $("selfNo").hidden = false; vd.className="verdict"; vd.textContent = "내 답과 비교해 스스로 채점하세요"; }
+    paintNums(); return;
+  }
+  area.className = "bubbles";
+  const a = ans(n);
+  const ok = mine !== null && a.includes(mine);
+  const reveal = shown || ok;
+  if (mine !== null) record(n, ok);
+  for (let k = 1; k <= 5; k++){
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "bubble"; b.textContent = k;
+    b.setAttribute("aria-label", C[k-1] + (reveal && a.includes(k) ? " 정답" : "") + (mine===k ? " 내 답" : ""));
+    if (reveal && a.includes(k)) b.classList.add("filled");
+    if (mine === k) b.classList.add("mine");
+    b.onclick = () => { if (!reveal){ mine = k; render(); } };
+    area.appendChild(b);
+  }
+  $("choice").hidden = !(mine !== null && !reveal);
+  $("show").hidden = reveal;
+  if (mine === null){ vd.className = "verdict"; vd.textContent = `${pad(n)}번 — 답을 먼저 고르세요`; }
+  else if (ok){ vd.className = "verdict ok"; vd.textContent = `○ ${pad(n)}번 정답입니다 (${fmt(a)})`; }
+  else if (shown){ vd.className = "verdict no"; vd.textContent = `✕ ${pad(n)}번 틀렸습니다 · 정답 ${fmt(a)}`; }
+  else { vd.className = "verdict no"; vd.textContent = `✕ ${pad(n)}번 틀렸습니다 · 다시 고르거나 정답을 확인하세요`; }
+  paintNums();
+}
+function selfGrade(ok){
+  record(n, ok); $("selfOk").hidden = $("selfNo").hidden = true;
+  const vd = $("verdict"); vd.className = "verdict " + (ok ? "ok" : "no");
+  vd.textContent = ok ? `○ ${pad(n)}번 맞음으로 기록했습니다` : `✕ ${pad(n)}번 틀림으로 기록했습니다`;
+  paintNums();
+}
+let bulkAns = {}, bulkPos = 0;
+function objList(){ const s = sec(), r = []; s.a.forEach((v, i) => { if (!isText(v)) r.push(s.start + i); }); return r; }
+function grade(){
+  const L = objList(), out = $("result"), box = $("bk");
+  if (!L.length){
+    box.hidden = true; out.innerHTML = `<p class="hint">이 단원에는 객관식 문항이 없습니다.</p>`;
+    $("bulkbar").hidden = true; lastBulk = null; return;
+  }
+  box.hidden = false;
+  bulkPos = Math.max(0, Math.min(bulkPos, L.length));
+  const done = bulkPos >= L.length, k = L[Math.min(bulkPos, L.length - 1)];
+  const entered = L.filter(q => bulkAns[q]).length;
+  $("bkNo").textContent = done ? "입력 끝" : `${pad(k)}번`;
+  $("bkPos").textContent = `${entered} / ${L.length} 입력`;
+  const opts = $("bkOpts"); opts.innerHTML = "";
+  for (let m = 1; m <= 5; m++){
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = m; b.disabled = done;
+    b.setAttribute("aria-label", `${C[m-1]} 선택`);
+    if (!done && bulkAns[k] === m) b.classList.add("sel");
+    b.onclick = () => bulkPick(m);
+    opts.appendChild(b);
+  }
+  $("bkPrev").disabled = bulkPos === 0;
+  $("bkSkip").disabled = done;
+  let right = 0, tried = 0; lastBulk = [];
+  const s = sec(); out.innerHTML = "";
+  const grid = document.createElement("div"); grid.className = "grid";
+  L.forEach((q, i) => {
+    const m = bulkAns[q], v = s.a[q - s.start], a = Array.isArray(v) ? v : [v];
+    let cls = "skip", mark = "—", my = "";
+    if (m){ tried++; my = C[m-1]; const ok = a.includes(m); lastBulk.push([q, ok]);
+      if (ok){ right++; cls = "ok"; mark = "○"; } else { cls = "no"; mark = "✕"; } }
+    const c = document.createElement("button");
+    c.type = "button"; c.className = "cell " + cls + (i === bulkPos ? " cur" : "");
+    c.innerHTML = `<b>${pad(q)}번</b>${mark} ${my}`;
+    c.setAttribute("aria-label", `${q}번 ${m ? (cls === "ok" ? "맞음" : "틀림") : "입력 안 함"}, 고치기`);
+    c.onclick = () => { bulkPos = i; grade(); };
+    grid.appendChild(c);
+  });
+  if (tried){
+    const sc = document.createElement("div"); sc.className = "score"; sc.textContent = `${right} / ${tried}`;
+    const h = document.createElement("p"); h.className = "hint"; h.textContent = `${book().title} · ${s.name} · 입력 ${tried}문항 중 ${right}문항 정답`;
+    out.append(sc, h);
+  }
+  out.appendChild(grid);
+  $("bulkbar").hidden = tried === 0;
+}
+function bulkPick(m){
+  const L = objList(); if (bulkPos >= L.length) return;
+  bulkAns[L[bulkPos]] = m; bulkPos++; $("bulkMsg").textContent = ""; grade();
+}
+function saveBulk(){
+  if (!lastBulk) return;
+  let added = 0;
+  lastBulk.forEach(([k, ok]) => { if (record(k, ok)) added++; });
+  const skipped = lastBulk.length - added;
+  $("bulkMsg").textContent = `${added}문항을 기록했습니다` + (skipped ? ` · 이미 기록된 ${skipped}문항은 그대로 둡니다` : "");
+  paintNums();
+}
+
+/* ---- 풀이 현황 ---- */
+function renderProg(){
+  const c = countBook(bi), done = c.ok + c.no;
+  $("psum").innerHTML = `<span class="big">${done}<small> / ${c.total}문항</small></span>
+    <span class="meta">진행률 <b>${pct(done, c.total)}%</b> · 맞음 <b>${c.ok}</b> · 틀림 <b>${c.no}</b>${done ? ` · 정답률 <b>${pct(c.ok, done)}%</b>` : ""}</span>`;
+  const only = $("onlyWrong").checked, list = $("secList");
+  const open = new Set([...list.querySelectorAll("details[open]")].map(d => d.dataset.s));
+  list.innerHTML = ""; let idx = 0, shownAny = false;
+  book().groups.forEach(g => {
+    const rows = [];
+    g.sections.forEach(x => {
+      const s = idx++, cc = count(bi, s), st = ST[sid(bi, s)] || {};
+      if (only && !cc.no) return;
+      const d = document.createElement("details");
+      d.className = "srow" + (cc.ok + cc.no === cc.total ? " done" : "");
+      d.dataset.s = s;
+      if (open.has(String(s)) || (only && cc.no)) d.open = true;
+      const sm = document.createElement("summary");
+      sm.innerHTML = `<span class="nm"></span><span class="ct">${cc.ok + cc.no} / ${cc.total}${cc.no ? ` · <span class="x">틀림 ${cc.no}</span>` : ""}</span>${barHTML(cc)}`;
+      sm.querySelector(".nm").textContent = `${x.name} (${pad(x.start)}~${pad(x.start + x.a.length - 1)})`;
+      d.appendChild(sm);
+      const chips = document.createElement("div"); chips.className = "chips";
+      for (let k = x.start; k < x.start + x.a.length; k++){
+        const v = st[k];
+        if (only && v !== "no") continue;
+        const b = document.createElement("button");
+        b.type = "button"; b.textContent = pad(k); b.className = v || "";
+        b.setAttribute("aria-label", `${k}번 ${v === "ok" ? "맞음" : v === "no" ? "틀림" : "안 풂"}, 풀러 가기`);
+        b.onclick = () => { showTab("solve"); selectSec(s, k); };
+        chips.appendChild(b);
+      }
+      d.appendChild(chips);
+      rows.push(d);
+    });
+    if (!rows.length) return;
+    shownAny = true;
+    const h = document.createElement("div"); h.className = "grp"; h.textContent = g.g;
+    list.appendChild(h); rows.forEach(r => list.appendChild(r));
+  });
+  if (!shownAny) list.innerHTML = `<p class="empty">${only ? "틀린 문항이 없습니다." : ""}</p>`;
+}
+function showTab(t){
+  const prog = t === "prog";
+  $("viewSolve").hidden = prog; $("viewProg").hidden = !prog;
+  $("tabSolve").setAttribute("aria-selected", !prog);
+  $("tabProg").setAttribute("aria-selected", prog);
+  if (prog) renderProg();
+  window.scrollTo({ top: 0 });
+}
+
+$("tabSolve").onclick = () => showTab("solve");
+$("tabProg").onclick = () => showTab("prog");
+$("onlyWrong").onchange = renderProg;
+$("sec").onchange = e => selectSec(+e.target.value);
+$("show").onclick = () => { shown = true; render(); };
+$("selfOk").onclick = () => selfGrade(true);
+$("selfNo").onclick = () => selfGrade(false);
+let rngTimer = null;
+function fillRange(){
+  const s = sec(), f = $("rFrom"), to = $("rTo");
+  f.innerHTML = ""; to.innerHTML = "";
+  for (let k = s.start; k < s.start + s.a.length; k++){
+    f.add(new Option(pad(k) + "번", k)); to.add(new Option(pad(k) + "번", k));
+  }
+  f.value = s.start; to.value = s.start + s.a.length - 1;
+}
+$("rFrom").onchange = () => { if (+$("rTo").value < +$("rFrom").value) $("rTo").value = $("rFrom").value; disarm(); };
+$("rTo").onchange = () => { if (+$("rTo").value < +$("rFrom").value) $("rFrom").value = $("rTo").value; disarm(); };
+$("rOk").onclick = () => {
+  const btn = $("rOk"), a = +$("rFrom").value, z = +$("rTo").value, cnt = z - a + 1;
+  if (!btn.classList.contains("arm")){
+    btn.classList.add("arm"); btn.textContent = `한 번 더 누르면 ${pad(a)}~${pad(z)}번 (${cnt}문항) 정답 처리`;
+    clearTimeout(rngTimer); rngTimer = setTimeout(disarm, 4000);
+    return;
+  }
+  disarm();
+  const id = sid(bi, si), st = Object.assign({}, ST[id] || {});
+  for (let k = a; k <= z; k++) st[k] = "ok";
+  ST[id] = st; persist(id); paintBooks(); render();
+  const vd = $("verdict"); vd.className = "verdict ok"; vd.textContent = `○ ${pad(a)}~${pad(z)}번 ${cnt}문항을 정답으로 기록했습니다`;
+};
+$("reset").onclick = () => { ST[sid(bi, si)] = {}; persist(sid(bi, si)); paintBooks(); render(); };
+$("bkPrev").onclick = () => { bulkPos--; grade(); };
+$("bkSkip").onclick = () => { delete bulkAns[objList()[bulkPos]]; bulkPos++; grade(); };
+$("bulkClear").onclick = () => { bulkAns = {}; bulkPos = 0; $("bulkMsg").textContent = ""; grade(); };
+$("bulkSave").onclick = saveBulk;
+let keyTarget = "main";
+function setKeyTarget(k){
+  keyTarget = k;
+  $("bk").classList.toggle("active", k === "bulk");
+  document.querySelector(".sheet").classList.toggle("active", false);
+}
+$("bk").closest("section").addEventListener("pointerdown", () => setKeyTarget("bulk"));
+$("bk").closest("section").addEventListener("focusin", () => setKeyTarget("bulk"));
+document.querySelector(".sheet").addEventListener("pointerdown", () => setKeyTarget("main"));
+document.addEventListener("keydown", e => {
+  if ($("viewSolve").hidden) return;
+  if (keyTarget === "bulk" && !$("bk").hidden){
+    if (["TEXTAREA","SELECT","INPUT"].includes(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
+    const L = objList();
+    if (/^[1-5]$/.test(e.key)){ e.preventDefault(); bulkPick(+e.key); }
+    else if ((e.key === "ArrowLeft" || e.key === "Backspace") && bulkPos > 0){ e.preventDefault(); bulkPos--; grade(); }
+    else if ((e.key === "ArrowRight" || e.key === "0") && bulkPos < L.length){ e.preventDefault(); delete bulkAns[L[bulkPos]]; bulkPos++; grade(); }
+    return;
+  }
+  if (["TEXTAREA","SELECT","INPUT"].includes(e.target.tagName) || isText(raw(n))) return;
+  const a = ans(n), done = shown || (mine !== null && a.includes(mine));
+  if (/^[1-5]$/.test(e.key) && !done){ mine = +e.key; render(); }
+  if (e.key === "Enter" && mine !== null && !done && e.target.tagName !== "BUTTON"){ shown = true; render(); }
+});
+$("mailNow").onclick = async () => {
+  const btn = $("mailNow"), msg = $("mailMsg");
+  btn.disabled = true; msg.className = ""; msg.textContent = "보내는 중…";
+  try {
+    if (pend.size) await gasFlush();
+    const r = await fetch(gas, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "mail" }) });
+    const j = await r.json();
+    if (j && j.mailed){ msg.className = "ok"; msg.textContent = "메일을 보냈습니다. Gmail을 확인하세요."; }
+    else if (j && j.ok){ msg.className = "bad"; msg.textContent = "Apps Script를 새 버전으로 배포해야 이 버튼이 작동합니다."; }
+    else throw new Error();
+  } catch(e){ msg.className = "bad"; msg.textContent = "보내지 못했습니다. 인터넷 연결을 확인하세요."; }
+  btn.disabled = false;
+};
+$("gasSave").onclick = gasConnect;
+$("gasOff").onclick = gasDisconnect;
+$("gasNow").onclick = async () => { const ok = await gasPull(); $("gasMsg").className = ok ? "ok" : "bad"; $("gasMsg").textContent = ok ? "구글 시트에서 최신 기록을 불러왔습니다." : "불러오지 못했습니다. 인터넷 연결과 주소를 확인하세요."; };
+$("sync").onclick = () => { if (db || IN_VIEWER) return; showTab("prog"); $("gsync").scrollIntoView({ behavior: "smooth" }); };
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && !db && gas) gasPull(); });
+if (!IN_VIEWER){ $("gsync").hidden = false; if (gas) $("gasUrl").value = gas; }
+buildBooks(); selectBook(0);
+setSync();
+connect().then(() => { if (!db && gas && !IN_VIEWER) gasPull(); });
+</script>
+</body>
+</html>
