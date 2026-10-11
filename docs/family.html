@@ -212,10 +212,11 @@ function renderSchedule(app){
     if (!list.length) box.appendChild(el("div", "none", "일정 없음"));
     list.forEach(x => box.appendChild(evRow(x, i)));
     const a = data.days[k];
-    if (a && (a.dinner || a.pickup)){
+    if (a && (a.dinner || a.pickup || a.home)){
       const inf = el("div", "info");
       if (a.dinner){ const s = el("span"); s.append("🍚 저녁 ", el("b", null, a.dinner === "yes" ? "먹음" : "안 먹음")); inf.appendChild(s); }
       if (a.pickup){ const s = el("span"); s.append("🚗 데리러 ", el("b", null, a.pickup)); inf.appendChild(s); }
+      if (a.home && (IS_ME || a.homeSent)){ const s = el("span"); s.append("🏠 귀가 ", el("b", null, hm(a.homeSent || a.home))); inf.appendChild(s); }
       box.appendChild(inf);
     }
     app.appendChild(box);
@@ -324,15 +325,34 @@ function answerCard(){
   other.oninput = () => { pickup = other.value.trim(); paint(); };
   paint();
   c.append(pc, other);
+  /* 귀가 시각: 엄마·아빠 둘 다, 보낼지는 그날그날 선택 */
+  c.appendChild(el("div", "lab", "🏠 귀가 시각 → 엄마·아빠 (보낼지는 오늘 선택)"));
+  const hr = el("div", "row");
+  const ht = el("input"); ht.type = "time"; ht.value = cur.home || ""; ht.setAttribute("aria-label", "귀가 시각");
+  let homeSend = false;
+  const hs = el("button", "chip", "엄마·아빠에게 보내기"); hs.type = "button";
+  const paintH = () => hs.setAttribute("aria-pressed", homeSend);
+  hs.onclick = () => { homeSend = !homeSend; paintH(); }; paintH();
+  hr.append(ht, hs);
+  c.appendChild(hr);
+  if (cur.homeSent) c.appendChild(el("div", "muted", `오늘 보낸 귀가 시각: ${hm(cur.homeSent)}`));
   const go = el("button", "btn primary", cur.at ? "다시 보내기" : "보내기"); go.type = "button"; go.style.marginTop = "12px";
   const msg = el("div", "done");
-  if (cur.at) msg.textContent = `보낸 답: 저녁 ${cur.dinner === "yes" ? "먹음" : cur.dinner === "no" ? "안 먹음" : "—"} · 데리러 ${cur.pickup || "—"}`;
+  if (cur.at) msg.textContent = `보낸 답: 저녁 ${cur.dinner === "yes" ? "먹음" : cur.dinner === "no" ? "안 먹음" : "—"} · 데리러 ${cur.pickup || "—"}` + (cur.home ? ` · 귀가 ${hm(cur.home)}` : "");
   go.onclick = async () => {
-    if (!dinner && !pickup){ msg.className = "done err"; msg.textContent = "저녁이나 데리러 올 곳 중 하나는 골라 주세요."; return; }
+    const home = ht.value;
+    if (!dinner && !pickup && !home){ msg.className = "done err"; msg.textContent = "저녁, 데리러 올 곳, 귀가 시각 중 하나는 넣어 주세요."; return; }
+    if (homeSend && !home){ msg.className = "done err"; msg.textContent = "보낼 귀가 시각을 넣어 주세요."; ht.focus(); return; }
     go.disabled = true;
-    const j = await send({ action: "answer", date: k, dinner, pickup });
+    const j = await send({ action: "answer", date: k, dinner, pickup, home, homeSend });
     go.disabled = false;
-    if (j.ok){ render(); const m = document.querySelector(".card .done"); if (m){ m.className = "done"; m.textContent = (dinner !== cur.dinner && dinner ? "엄마에게 저녁 알림을 보냈습니다. " : "") + (pickup ? "아빠는 오후 9시에 알림을 받습니다." : "저장했습니다."); } }
+    if (j.ok){
+      const parts = [];
+      if (dinner && dinner !== cur.dinner) parts.push("엄마에게 저녁 알림을 보냈습니다.");
+      if (homeSend && home && home !== cur.homeSent) parts.push(`엄마·아빠에게 귀가 ${hm(home)}을 보냈습니다.`);
+      if (pickup) parts.push("아빠는 오후 9시에 데리러 갈 곳 알림을 받습니다.");
+      render(); const m = document.querySelector(".card .done"); if (m){ m.className = "done"; m.textContent = parts.join(" ") || "저장했습니다."; }
+    }
     else { msg.className = "done err"; msg.textContent = "보내지 못했습니다. 인터넷을 확인하세요."; }
   };
   c.append(go, msg);
@@ -401,6 +421,11 @@ function placesCard(){
   row.append(inp, ad);
   c.append(ch, row, el("p", "muted", "'오늘 답하기'와 일정 장소에서 골라 쓸 수 있습니다."));
   return c;
+}
+/* "21:30" → "오후 9:30" */
+function hm(t){
+  const m = /^(\d{1,2}):(\d{2})$/.exec(t || ""); if (!m) return t || "";
+  const h = +m[1]; return `${h < 12 ? "오전" : "오후"} ${h % 12 || 12}:${m[2]}`;
 }
 function when(iso){
   const d = new Date(iso); if (isNaN(d)) return "";
