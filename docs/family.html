@@ -148,6 +148,16 @@ async function pull(){
   } catch(e){ setSync("err"); }
 }
 let busy = false;
+/* 실패 이유를 알기 쉽게 */
+function why(j){
+  const e = j && j.error;
+  if (e === "action" || e === "item" || e === "home") return "Apps Script가 예전 코드입니다. 새 코드로 바꾸고 '새 버전'으로 배포해 주세요.";
+  if (e === "pw") return "비밀번호가 맞지 않습니다. Apps Script의 EXAM_PASSWORD와 앱 비밀번호가 같은지 확인하세요.";
+  if (e === "at") return "보낼 시각을 넣어 주세요.";
+  if (e === "who") return "온유(0000)만 할 수 있습니다.";
+  if (!j || !Object.keys(j).length) return "인터넷 연결 또는 Apps Script 배포를 확인하세요.";
+  return "저장하지 못했습니다 (" + e + ").";
+}
 async function send(body){
   busy = true; setSync("busy");
   try {
@@ -360,7 +370,7 @@ function itemCard(kind){
     const j = await send({ action: "item", date: k, kind, v, at: weekend ? at.value : "" });
     go.disabled = false;
     if (j.ok) render();
-    else { msg.className = "done err"; msg.textContent = j.error === "at" ? "보낼 시각을 넣어 주세요." : "저장하지 못했습니다. 인터넷을 확인하세요."; }
+    else { msg.className = "done err"; msg.textContent = why(j); }
   };
   c.append(go, msg);
   return c;
@@ -384,7 +394,7 @@ function homeCard(){
     const j = await send({ action: "home", date: k, depart: dep.value, arrive: arr.value });
     go.disabled = false;
     if (j.ok) render();
-    else { msg.className = "done err"; msg.textContent = "보내지 못했습니다. 인터넷을 확인하세요."; }
+    else { msg.className = "done err"; msg.textContent = why(j); }
   };
   c.append(go, msg);
   return c;
@@ -414,7 +424,7 @@ function sendCard(){
     const j = await send({ action: "msg", to: [...to], text: ta.value });
     go.disabled = false;
     if (j.ok){ const names = [...to].map(r => PEOPLE[r]).join(", "); render(); const m = document.querySelectorAll(".card .done")[1]; if (m){ m.className = "done"; m.textContent = `${names}에게 보냈습니다.`; } }
-    else { msg.className = "done err"; msg.textContent = "보내지 못했습니다."; }
+    else { msg.className = "done err"; msg.textContent = why(j); }
   };
   c.append(go, msg);
   return c;
@@ -489,7 +499,7 @@ function renderMsg(app){
     const j = await send({ action: "msg", to: ["0000"], text: ta.value });
     go.disabled = false;
     if (j.ok){ render(); window.scrollTo({ top: document.body.scrollHeight }); }
-    else { msg.className = "done err"; msg.textContent = "보내지 못했습니다. 인터넷을 확인하세요."; }
+    else { msg.className = "done err"; msg.textContent = why(j); }
   };
   f.append(ta, go, msg); app.appendChild(f);
   setTimeout(() => window.scrollTo({ top: document.body.scrollHeight }), 0);
