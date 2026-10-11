@@ -10,7 +10,11 @@ class PushService : FirebaseMessagingService() {
         val d = msg.data
         val title = d["title"] ?: msg.notification?.title ?: return
         val body = d["body"] ?: msg.notification?.body ?: ""
-        if (!Me.on(this, "n_msg")) return
+        // 알림 종류별로 켜고 끔 (밥 · 데리러 · 귀가 · 메시지)
+        val kind = d["kind"] ?: "msg"
+        val key = "n_$kind"
+        val prefs = Me.PREFS[Me.role(this)] ?: emptyList()
+        if (!Me.on(this, if (prefs.contains(key)) key else "n_msg")) return
         Notify.simple(this, (System.currentTimeMillis() % 100000).toInt() + 100, title, listOf(body), d["tab"] ?: "", Notify.CH_MSG)
     }
 

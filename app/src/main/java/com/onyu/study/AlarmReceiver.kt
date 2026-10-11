@@ -39,12 +39,8 @@ class AlarmReceiver : BroadcastReceiver() {
                 Notify.study(ctx, kind, s)
                 TodayWidget.updateAll(ctx, s)
             }
-            "ask" -> Notify.simple(ctx, 3, "오늘 저녁 · 데리러 올 곳",
-                listOf("저녁을 먹는지, 어디로 데리러 오면 되는지 알려 주세요. 누르면 바로 답할 수 있습니다."), "admin")
-            "pickup" -> {
-                val t = Family.pickupText(Family.load())
-                Notify.simple(ctx, 4, t.first, listOf(t.second), "schedule")
-            }
+            "ask" -> Notify.simple(ctx, 3, "밥 · 데리러 올 곳",
+                listOf("오후 9시에 엄마(밥) · 아빠(데리러)에게 각각 갑니다. 누르면 바로 답할 수 있습니다."), "admin")
         }
     }
 
@@ -53,8 +49,7 @@ class AlarmReceiver : BroadcastReceiver() {
         val KINDS = listOf(
             Kind("am", 8, 0, false, "n_am", "0000"),
             Kind("pm", 17, 50, false, "n_pm", "0000"),
-            Kind("ask", 8, 50, true, "n_ask", "0000"),
-            Kind("pickup", 21, 0, true, "n_pickup", "0002")
+            Kind("ask", 20, 50, true, "n_ask", "0000")
         )
 
         /** 이 휴대폰 주인과 설정에 맞게 모든 알림을 다시 예약 */

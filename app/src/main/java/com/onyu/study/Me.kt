@@ -10,8 +10,8 @@ object Me {
     /** 사람마다 켜고 끌 수 있는 알림 */
     val PREFS = mapOf(
         "0000" to listOf("n_am", "n_pm", "n_ask", "n_msg"),
-        "0001" to listOf("n_msg"),
-        "0002" to listOf("n_pickup", "n_msg")
+        "0001" to listOf("n_dinner", "n_home", "n_msg"),
+        "0002" to listOf("n_pickup", "n_home", "n_msg")
     )
 
     private fun sp(ctx: Context) = ctx.getSharedPreferences("me", Context.MODE_PRIVATE)
