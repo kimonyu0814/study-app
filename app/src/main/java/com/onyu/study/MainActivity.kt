@@ -104,7 +104,8 @@ class MainActivity : Activity() {
             }
         }
         w.visibility = View.GONE
-        w.loadUrl(Study.PAGES + pages[i])
+        // 켤 때마다 최신 화면을 받도록 주소 뒤에 시각을 붙임 (안 되면 앱 안 사본)
+        w.loadUrl(Study.PAGES + pages[i] + "?t=" + System.currentTimeMillis())
         return w
     }
 
