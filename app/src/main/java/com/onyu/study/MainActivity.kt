@@ -45,11 +45,13 @@ class MainActivity : Activity() {
             Tab("settings", "설정", "family.html#tab=settings")
         ),
         "0001" to listOf(
+            Tab("study", "학습기록", "index.html"),
             Tab("schedule", "스케줄", "family.html#tab=schedule"),
             Tab("msg", "메시지", "family.html#tab=msg"),
             Tab("settings", "설정", "family.html#tab=settings")
         ),
         "0002" to listOf(
+            Tab("study", "학습기록", "index.html"),
             Tab("schedule", "스케줄", "family.html#tab=schedule"),
             Tab("msg", "메시지", "family.html#tab=msg"),
             Tab("settings", "설정", "family.html#tab=settings")
