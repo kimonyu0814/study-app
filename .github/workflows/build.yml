@@ -29,7 +29,7 @@ jobs:
       - name: 인터넷이 안 될 때 쓸 페이지 사본 넣기
         run: |
           mkdir -p app/src/main/assets
-          cp docs/index.html docs/check.html app/src/main/assets/
+          cp docs/index.html docs/check.html docs/family.html app/src/main/assets/
 
       - name: APK 빌드
         run: gradle assembleRelease -PvCode=${{ github.run_number }} --no-daemon

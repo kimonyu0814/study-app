@@ -369,6 +369,8 @@ let data = emptyData(), rev = 0;
 let nav = { main: "home", sem: { y1: 2, y2: 1, y3: 1 }, subj: "kor", gterm: null };
 let editing = false, draft = null, pw = "", homeDay = today(), calSel = today(), busySave = false, pwNext = null;
 let savedPw = ""; try { savedPw = localStorage.getItem("examPw") || ""; } catch(e){}
+/* 앱에서 0000 으로 들어왔으면 앱의 비밀번호 사용 */
+try { if (window.App && App.role() === "0000" && App.pw()) savedPw = App.pw(); } catch(e){}
 try { const n = JSON.parse(localStorage.getItem("studyNav")); if (n && MAIN.some(x => x.k === n.main)) nav = Object.assign(nav, n); } catch(e){}
 try { const c = JSON.parse(localStorage.getItem("examCache")); if (c && c.data){ data = normalize(c.data); rev = c.rev || 0; } } catch(e){}
 const saveNav = () => { try { localStorage.setItem("studyNav", JSON.stringify(nav)); } catch(e){} };

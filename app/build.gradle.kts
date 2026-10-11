@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.google.gms.google-services")
 }
 
 // GitHub Actions 가 빌드 번호를 -PvCode 로 넘겨 줌 (버전이 하나씩 올라감)
@@ -43,4 +44,10 @@ android {
         checkReleaseBuilds = false
         abortOnError = false
     }
+}
+
+dependencies {
+    // 푸시 알림 (Firebase Cloud Messaging)
+    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
+    implementation("com.google.firebase:firebase-messaging")
 }

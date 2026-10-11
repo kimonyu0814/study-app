@@ -1,0 +1,20 @@
+package com.onyu.study
+
+import com.google.firebase.messaging.FirebaseMessagingService
+import com.google.firebase.messaging.RemoteMessage
+
+/** 서버에서 오는 푸시 (메시지 · 저녁 알림) */
+class PushService : FirebaseMessagingService() {
+
+    override fun onMessageReceived(msg: RemoteMessage) {
+        val d = msg.data
+        val title = d["title"] ?: msg.notification?.title ?: return
+        val body = d["body"] ?: msg.notification?.body ?: ""
+        if (!Me.on(this, "n_msg")) return
+        Notify.simple(this, (System.currentTimeMillis() % 100000).toInt() + 100, title, listOf(body), d["tab"] ?: "", Notify.CH_MSG)
+    }
+
+    override fun onNewToken(token: String) {
+        Family.register(this, token)
+    }
+}

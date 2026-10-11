@@ -10,37 +10,176 @@ import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.text.InputFilter
+import android.text.InputType
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.webkit.JavascriptInterface
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Button
+import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import org.json.JSONObject
 
-/** 학습기록 · 정답확인 두 화면을 아래 탭으로 오가는 앱 */
+/** 처음엔 식별 코드 입력, 그다음 사람마다 다른 탭 */
 class MainActivity : Activity() {
 
-    private val pages = arrayOf("index.html", "check.html")
-    private val names = arrayOf("학습기록", "정답확인")
-    private lateinit var webs: Array<WebView>
-    private lateinit var tabs: Array<TextView>
+    class Tab(val key: String, val name: String, val page: String)
+
+    private val tabsByRole = mapOf(
+        "0000" to listOf(
+            Tab("study", "학습기록", "index.html"),
+            Tab("check", "정답확인", "check.html"),
+            Tab("schedule", "스케줄", "family.html#tab=schedule"),
+            Tab("admin", "관리", "family.html#tab=admin"),
+            Tab("settings", "설정", "family.html#tab=settings")
+        ),
+        "0001" to listOf(
+            Tab("schedule", "스케줄", "family.html#tab=schedule"),
+            Tab("msg", "메시지", "family.html#tab=msg"),
+            Tab("settings", "설정", "family.html#tab=settings")
+        ),
+        "0002" to listOf(
+            Tab("schedule", "스케줄", "family.html#tab=schedule"),
+            Tab("msg", "메시지", "family.html#tab=msg"),
+            Tab("settings", "설정", "family.html#tab=settings")
+        )
+    )
+    private var tabs: List<Tab> = emptyList()
+    private val webs = ArrayList<WebView>()
+    private val buttons = ArrayList<TextView>()
     private var cur = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Notify.channel(this)
+        if (Me.role(this).isEmpty()) showLogin() else showMain(intent?.getStringExtra("tab"))
+    }
+
+    private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
+
+    // ---------- 처음 화면: 식별 코드 ----------
+    private fun showLogin() {
+        val box = LinearLayout(this)
+        box.orientation = LinearLayout.VERTICAL
+        box.gravity = Gravity.CENTER_HORIZONTAL
+        box.setPadding(dp(28), dp(96), dp(28), dp(28))
+        box.setBackgroundColor(Color.parseColor("#FBFAF7"))
+
+        val title = TextView(this)
+        title.text = "학습기록"
+        title.textSize = 30f
+        title.typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
+        title.setTextColor(Color.parseColor("#1F2433"))
+        val sub = TextView(this)
+        sub.text = "식별 코드를 입력하세요"
+        sub.textSize = 16f
+        sub.setTextColor(Color.parseColor("#6E7180"))
+        sub.setPadding(0, dp(10), 0, dp(24))
+
+        val edit = EditText(this)
+        edit.inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
+        edit.filters = arrayOf(InputFilter.LengthFilter(4))
+        edit.textSize = 26f
+        edit.gravity = Gravity.CENTER
+        edit.letterSpacing = 0.4f
+        edit.imeOptions = EditorInfo.IME_ACTION_DONE
+        edit.setTextColor(Color.parseColor("#1F2433"))
+
+        val err = TextView(this)
+        err.textSize = 14f
+        err.setTextColor(Color.parseColor("#C2372D"))
+        err.gravity = Gravity.CENTER
+        err.setPadding(0, dp(10), 0, dp(10))
+
+        val ok = Button(this)
+        ok.text = "확인"
+        ok.textSize = 17f
+        ok.setTextColor(Color.WHITE)
+        ok.setBackgroundColor(Color.parseColor("#1F2433"))
+
+        var askPw = false
+        val submit = {
+            val v = edit.text.toString().trim()
+            if (!askPw) {
+                when {
+                    v.isEmpty() -> err.text = "코드를 입력하세요."
+                    !Me.PEOPLE.containsKey(v) -> { err.text = "등록되지 않은 코드입니다."; edit.setText("") }
+                    v == "0000" -> {
+                        askPw = true
+                        sub.text = "온유 · 비밀번호를 입력하세요"
+                        err.text = ""
+                        edit.setText("")
+                        edit.filters = arrayOf(InputFilter.LengthFilter(20))
+                    }
+                    else -> { Me.set(this, v, ""); afterLogin() }
+                }
+            } else if (v.isEmpty()) {
+                err.text = "비밀번호를 입력하세요."
+            } else {
+                ok.isEnabled = false
+                err.setTextColor(Color.parseColor("#6E7180"))
+                err.text = "확인 중…"
+                Thread {
+                    val res: Boolean? = try { Family.auth(v) } catch (e: Exception) { null }
+                    runOnUiThread {
+                        ok.isEnabled = true
+                        err.setTextColor(Color.parseColor("#C2372D"))
+                        when (res) {
+                            true -> { Me.set(this, "0000", v); afterLogin() }
+                            false -> { err.text = "비밀번호가 맞지 않습니다."; edit.setText("") }
+                            null -> err.text = "인터넷 연결을 확인한 뒤 다시 눌러 주세요."
+                        }
+                    }
+                }.start()
+            }
+        }
+        ok.setOnClickListener { submit() }
+        edit.setOnEditorActionListener { _, id, _ -> if (id == EditorInfo.IME_ACTION_DONE) { submit(); true } else false }
+
+        val wrap = ViewGroup.LayoutParams.WRAP_CONTENT
+        val match = ViewGroup.LayoutParams.MATCH_PARENT
+        box.addView(title, LinearLayout.LayoutParams(wrap, wrap))
+        box.addView(sub, LinearLayout.LayoutParams(wrap, wrap))
+        box.addView(edit, LinearLayout.LayoutParams(dp(220), wrap))
+        box.addView(err, LinearLayout.LayoutParams(match, wrap))
+        box.addView(ok, LinearLayout.LayoutParams(dp(220), dp(52)))
+        setContentView(box)
+        edit.requestFocus()
+    }
+
+    private fun afterLogin() {
+        currentFocus?.let { v ->
+            getSystemService(InputMethodManager::class.java).hideSoftInputFromWindow(v.windowToken, 0)
+        }
+        Family.register(this)
+        AlarmReceiver.scheduleAll(this)
+        showMain(null)
+    }
+
+    // ---------- 본 화면 ----------
+    private fun showMain(openTab: String?) {
+        val role = Me.role(this)
+        tabs = tabsByRole[role] ?: tabsByRole.getValue("0001")
+        webs.clear()
+        buttons.clear()
+
         val root = LinearLayout(this)
         root.orientation = LinearLayout.VERTICAL
-
         val frame = FrameLayout(this)
-        webs = Array(pages.size) { i -> makeWeb(i) }
-        webs.forEach { w ->
+        tabs.forEachIndexed { i, _ ->
+            val w = makeWeb(i)
+            webs.add(w)
             frame.addView(w, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         }
         root.addView(frame, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
@@ -48,46 +187,45 @@ class MainActivity : Activity() {
         val bar = LinearLayout(this)
         bar.orientation = LinearLayout.HORIZONTAL
         bar.setBackgroundColor(Color.parseColor("#1F2433"))
-        tabs = Array(names.size) { i ->
-            val t = TextView(this)
-            t.text = names[i]
-            t.gravity = Gravity.CENTER
-            t.textSize = 15f
-            t.setPadding(0, dp(14), 0, dp(14))
-            t.setOnClickListener { select(i) }
-            t
-        }
-        tabs.forEach { t ->
-            bar.addView(t, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        tabs.forEachIndexed { i, t ->
+            val b = TextView(this)
+            b.text = t.name
+            b.gravity = Gravity.CENTER
+            b.textSize = if (tabs.size > 4) 13f else 15f
+            b.setPadding(0, dp(14), 0, dp(14))
+            b.setOnClickListener { select(i) }
+            buttons.add(b)
+            bar.addView(b, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         }
         root.addView(bar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         setContentView(root)
 
-        cur = getSharedPreferences("study", MODE_PRIVATE).getInt("tab", 0).coerceIn(0, pages.size - 1)
-        select(cur)
+        val saved = getSharedPreferences("study", MODE_PRIVATE).getString("tabKey", "") ?: ""
+        val want = tabs.indexOfFirst { t -> t.key == (openTab ?: saved) }
+        select(if (want >= 0) want else 0)
 
-        Notify.channel(this)
         if (Build.VERSION.SDK_INT >= 33 &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1)
         }
-        AlarmReceiver.schedule(this)
-        TodayWidget.refresh(this)
+        AlarmReceiver.scheduleAll(this)
+        Family.register(this)
+        if (role == "0000") TodayWidget.refresh(this)
         checkUpdate()
     }
 
-    private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
-
     private fun makeWeb(i: Int): WebView {
+        val page = tabs[i].page
         val w = WebView(this)
         w.settings.javaScriptEnabled = true
         w.settings.domStorageEnabled = true
         w.settings.cacheMode = WebSettings.LOAD_DEFAULT
+        w.addJavascriptInterface(Bridge(), "App")
         w.webViewClient = object : WebViewClient() {
             private fun fallback(view: WebView, req: WebResourceRequest) {
-                // 인터넷이 안 되거나 페이지가 아직 없으면 앱 안에 넣어 둔 사본을 띄움
+                // 인터넷이 안 되거나 페이지가 아직 없으면 앱 안에 넣어 둔 사본
                 if (req.isForMainFrame && !req.url.toString().startsWith("file:")) {
-                    view.loadUrl("file:///android_asset/" + pages[i])
+                    view.loadUrl("file:///android_asset/$page")
                 }
             }
             override fun onReceivedError(view: WebView, req: WebResourceRequest, err: WebResourceError) = fallback(view, req)
@@ -104,40 +242,74 @@ class MainActivity : Activity() {
             }
         }
         w.visibility = View.GONE
-        // 켤 때마다 최신 화면을 받도록 주소 뒤에 시각을 붙임 (안 되면 앱 안 사본)
-        w.loadUrl(Study.PAGES + pages[i] + "?t=" + System.currentTimeMillis())
+        // 켤 때마다 최신 화면 (주소 뒤에 시각)
+        val path = page.substringBefore("#")
+        val hash = if (page.contains("#")) "#" + page.substringAfter("#") else ""
+        w.loadUrl(Study.PAGES + path + "?t=" + System.currentTimeMillis() + hash)
         return w
     }
 
     private fun select(i: Int) {
+        if (i !in tabs.indices) return
         cur = i
         webs.forEachIndexed { k, w -> w.visibility = if (k == i) View.VISIBLE else View.GONE }
-        tabs.forEachIndexed { k, t ->
+        buttons.forEachIndexed { k, t ->
             t.setTextColor(if (k == i) Color.WHITE else Color.parseColor("#8A8FA0"))
             t.typeface = if (k == i) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
         }
-        getSharedPreferences("study", MODE_PRIVATE).edit().putInt("tab", i).apply()
+        getSharedPreferences("study", MODE_PRIVATE).edit().putString("tabKey", tabs[i].key).apply()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val key = intent.getStringExtra("tab") ?: return
+        val i = tabs.indexOfFirst { t -> t.key == key }
+        if (i >= 0) {
+            select(i)
+            webs[i].evaluateJavascript("try{pull()}catch(e){}", null)
+        }
     }
 
     override fun onResume() {
         super.onResume()
-        if (!::webs.isInitialized) return
         webs.forEach { w ->
             w.onResume()
-            // 다른 기기에서 바꾼 내용 바로 불러오기
+            // 다른 휴대폰에서 바꾼 내용 바로 불러오기
             w.evaluateJavascript("try{pull()}catch(e){};try{gasPull()}catch(e){}", null)
         }
     }
 
     override fun onPause() {
         super.onPause()
-        if (::webs.isInitialized) TodayWidget.refresh(this)
+        if (Me.role(this) == "0000") TodayWidget.refresh(this)
     }
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        val w = webs[cur]
-        if (w.canGoBack()) w.goBack() else super.onBackPressed()
+        val w = webs.getOrNull(cur)
+        if (w != null && w.canGoBack()) w.goBack() else super.onBackPressed()
+    }
+
+    /** 화면(웹페이지)에서 부르는 앱 기능 */
+    inner class Bridge {
+        @JavascriptInterface fun role(): String = Me.role(this@MainActivity)
+        @JavascriptInterface fun pw(): String = Me.pw(this@MainActivity)
+        @JavascriptInterface fun prefs(): String = Me.prefsJson(this@MainActivity)
+        @JavascriptInterface fun version(): String = BuildConfig.VERSION_CODE.toString()
+        @JavascriptInterface fun setPref(key: String, on: Boolean) {
+            Me.setOn(this@MainActivity, key, on)
+            AlarmReceiver.scheduleAll(this@MainActivity)
+        }
+        @JavascriptInterface fun resetRole() {
+            runOnUiThread {
+                Me.clear(this@MainActivity)
+                AlarmReceiver.scheduleAll(this@MainActivity)
+                webs.forEach { w -> w.destroy() }
+                webs.clear()
+                showLogin()
+            }
+        }
     }
 
     /** GitHub 에 새 버전이 올라왔는지 확인 */
@@ -160,7 +332,7 @@ class MainActivity : Activity() {
                         if (!isFinishing) {
                             AlertDialog.Builder(this)
                                 .setTitle("새 버전이 있습니다")
-                                .setMessage("지금 v${BuildConfig.VERSION_CODE} → 새 버전 v$latest\n\n'업데이트'를 누르면 새 APK를 내려받습니다. 다 받은 뒤 눌러서 설치하면 기록은 그대로 유지됩니다.")
+                                .setMessage("지금 v${BuildConfig.VERSION_CODE} → 새 버전 v$latest\n\n'업데이트'를 누르면 새 APK를 내려받습니다. 다 받은 뒤 눌러서 설치하면 기록과 설정은 그대로 유지됩니다.")
                                 .setPositiveButton("업데이트") { _, _ ->
                                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(apk)))
                                 }
@@ -170,7 +342,6 @@ class MainActivity : Activity() {
                     }
                 }
             } catch (e: Exception) {
-                // 인터넷이 안 되면 다음에 다시 확인
             }
         }.start()
     }

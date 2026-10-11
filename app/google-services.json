@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "14534562737",
+    "project_id": "study-app-1f2f3",
+    "storage_bucket": "study-app-1f2f3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:14534562737:android:01f24ac23df627992f2390",
+        "android_client_info": {
+          "package_name": "com.onyu.study"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCfEqdPBnu6VHvuopKPeVHDHcYSRfYZJKo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

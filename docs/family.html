@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>가족</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=Nanum+Myeongjo:wght@800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FBFAF7; --card:#FFFFFF; --rule:#E4E1D8; --rule-soft:#EFEDE6;
+  --ink:#1F2433; --muted:#6E7180; --accent:#2F4A8A; --ok:#2E7D4F; --warn:#B7791F; --bad:#C2372D;
+  --fixed:#2F4A8A; --week:#B7791F; --me:#2F4A8A; --mom:#B4483A; --dad:#3B7D5A;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#15171D; --card:#1C1F27; --rule:#2E323D; --rule-soft:#252832;
+    --ink:#E9E8EE; --muted:#A2A5B3; --accent:#8FA8E8; --ok:#5CC48A; --warn:#E3B04B; --bad:#FF7B70;
+    --fixed:#8FA8E8; --week:#E3B04B; --me:#8FA8E8; --mom:#E07F70; --dad:#6FBF93;
+    color-scheme:dark;
+  }
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.55}
+main{max-width:720px;margin:0 auto;padding:22px 16px 60px}
+button,input,select,textarea{font:inherit;color:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1{font-family:"Nanum Myeongjo",serif;font-weight:800;font-size:1.7rem;margin:0;letter-spacing:-.02em}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.sync{font-size:.76rem;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+.sync::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.sync.on::before{background:var(--ok)} .sync.busy::before{background:var(--warn)} .sync.err::before{background:var(--bad)}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:16px;margin-bottom:12px}
+.card h2{font-size:1rem;margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.card h2 .meta{font-size:.8rem;font-weight:500;color:var(--muted)}
+.muted{color:var(--muted);font-size:.86rem}
+.btn{border:1.5px solid var(--ink);background:transparent;border-radius:7px;padding:8px 14px;font-weight:700;font-size:.92rem;cursor:pointer}
+.btn.primary{background:var(--ink);color:var(--paper)}
+.btn.ghost{border-color:var(--rule);color:var(--muted);font-weight:500}
+.btn.sm{padding:5px 10px;font-size:.82rem}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1.5px solid var(--rule);background:var(--card);border-radius:999px;padding:6px 13px;cursor:pointer;font-size:.9rem}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:#fff;font-weight:700}
+input[type=text],input[type=time],select,textarea{border:1.5px solid var(--rule);border-radius:7px;background:var(--paper);padding:8px 10px;min-width:0}
+textarea{width:100%;resize:vertical;min-height:70px}
+.lab{font-size:.82rem;color:var(--muted);margin:12px 0 6px;font-weight:700}
+.lab:first-of-type{margin-top:0}
+.done{margin-top:10px;font-size:.86rem;color:var(--ok);font-weight:700;min-height:1.2em}
+.err{color:var(--bad)}
+
+/* 주간 스케줄 */
+.weeknav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.weeknav .nv{display:inline-flex;align-items:center;gap:4px}
+.weeknav .nv button{border:1px solid var(--rule);background:var(--card);border-radius:6px;width:32px;height:30px;cursor:pointer}
+.weeknav b{font-variant-numeric:tabular-nums;min-width:120px;text-align:center}
+.day{background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:10px 14px;margin-bottom:8px}
+.day.today{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.day h3{margin:0 0 4px;font-size:.92rem;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.day h3 .now{font-size:.7rem;color:#fff;background:var(--accent);border-radius:999px;padding:0 7px}
+.day h3.sat{color:var(--accent)} .day h3.sun{color:var(--bad)}
+.ev{display:grid;grid-template-columns:92px 1fr;gap:2px 8px;align-items:baseline;padding:7px 0;border-top:1px solid var(--rule-soft)}
+.ev .tm{font-size:.82rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.ev .tt{font-weight:700;min-width:0;overflow-wrap:anywhere}
+.ev .tt small{font-weight:500;color:var(--muted);margin-left:6px}
+.ev .tag{font-size:.68rem;font-weight:500;border:1px solid currentColor;border-radius:4px;padding:0 5px;white-space:nowrap;margin-left:6px;vertical-align:1px}
+.ev .tag.f{color:var(--fixed)} .ev .tag.w{color:var(--week)}
+.ev.skip .tt .nm,.ev.skip .tm{text-decoration:line-through;opacity:.5}
+.ev .acts{grid-column:1/-1;display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap}
+.ev .acts button{border:1px solid var(--rule);background:transparent;border-radius:5px;font-size:.75rem;padding:2px 7px;cursor:pointer;color:var(--muted)}
+.ev .acts button.arm{background:var(--bad);color:#fff;border-color:var(--bad)}
+.info{display:flex;gap:12px;flex-wrap:wrap;font-size:.82rem;margin-top:4px;color:var(--muted)}
+.info b{color:var(--ink)}
+.none{font-size:.84rem;color:var(--muted);padding:2px 0}
+.addf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.addf .full{grid-column:1/-1}
+@media (min-width:560px){.addf{grid-template-columns:90px 110px 110px 1fr}.addf .t2{grid-column:span 2}}
+
+/* 메시지 */
+.msgs{display:flex;flex-direction:column;gap:8px}
+.bub{max-width:85%;padding:8px 12px;border-radius:12px;background:var(--rule-soft);overflow-wrap:anywhere;white-space:pre-wrap}
+.bub.mine{align-self:flex-end;background:var(--accent);color:#fff}
+.bub .who{display:block;font-size:.72rem;opacity:.8;margin-bottom:2px}
+.mlist{list-style:none;margin:0;padding:0}
+.mlist li{padding:8px 0;border-top:1px solid var(--rule-soft);font-size:.9rem;overflow-wrap:anywhere;white-space:pre-wrap}
+.mlist li:first-child{border-top:none}
+.mlist .who{font-size:.76rem;color:var(--muted);display:block}
+.mlist .who b{color:var(--c)}
+
+/* 설정 */
+.sw{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--rule-soft)}
+.sw:first-of-type{border-top:none}
+.sw small{display:block;color:var(--muted);font-size:.78rem}
+.tg{position:relative;width:50px;height:30px;flex:none;border-radius:999px;border:none;background:var(--rule);cursor:pointer;transition:background .15s}
+.tg::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.tg[aria-checked="true"]{background:var(--ok)}
+.tg[aria-checked="true"]::after{left:23px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+const API = "https://script.google.com/macros/s/AKfycbzwUGDOfoBCJbPQx96HCMN8vin0OPCcREB-kYGv-yiDVGkHIOlapcL85oasQRA71NdX/exec";
+const PEOPLE = { "0000": "온유", "0001": "엄마", "0002": "아빠" };
+const PCOL = { "0000": "var(--me)", "0001": "var(--mom)", "0002": "var(--dad)" };
+const WD = ["월", "화", "수", "목", "금", "토", "일"];
+const Q = new URLSearchParams(location.search + "&" + location.hash.slice(1));
+const TAB = Q.get("tab") || "schedule";
+/* 앱 안에서는 앱이 알려 주는 코드, 브라우저에서는 주소의 ?me= */
+const HAS_APP = typeof window.App !== "undefined";
+const ME = HAS_APP ? App.role() : (Q.get("me") || "0000");
+const PW = () => HAS_APP ? App.pw() : (localStorage.getItem("examPw") || "");
+const IS_ME = ME === "0000";
+
+const $ = id => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const uid = () => Math.random().toString(36).slice(2, 9);
+const pad2 = n => String(n).padStart(2, "0");
+const ymd = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const parseD = s => new Date(s + "T00:00:00");
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const wdIdx = d => (d.getDay() + 6) % 7;
+const monday = d => ymd(addDays(d, -wdIdx(d)));
+const md = d => `${d.getMonth() + 1}/${d.getDate()}`;
+const today = () => ymd(new Date());
+
+let data = { schedule: { fixed: [], weeks: {} }, places: ["학원", "학교", "독서실"], days: {}, msgs: [] };
+try { const c = JSON.parse(localStorage.getItem("familyCache")); if (c) data = Object.assign(data, c); } catch(e){}
+let week = monday(new Date()), editing = false, sync = "load";
+
+/* ---------- 서버 ---------- */
+function setSync(s, t){ sync = s; const e = $("sync"); if (!e) return; e.className = "sync " + ({ on: "on", busy: "busy", err: "err", load: "busy" }[s]); e.textContent = t || { on: "동기화됨", busy: "저장 중…", err: "연결 안 됨", load: "불러오는 중…" }[s]; }
+function accept(d){
+  if (!d) return;
+  data = Object.assign({ schedule: { fixed: [], weeks: {} }, places: [], days: {}, msgs: [] }, d);
+  data.schedule.fixed = data.schedule.fixed || []; data.schedule.weeks = data.schedule.weeks || {};
+  try { localStorage.setItem("familyCache", JSON.stringify(data)); } catch(e){}
+}
+async function pull(){
+  try {
+    const r = await fetch(API + "?app=family&t=" + Date.now()); const j = await r.json();
+    if (!j || !j.family){ setSync("err", "Apps Script 업데이트 필요"); return; }
+    if (busy || document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+    accept(j.data); setSync("on"); render();
+  } catch(e){ setSync("err"); }
+}
+let busy = false;
+async function send(body){
+  busy = true; setSync("busy");
+  try {
+    const r = await fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(Object.assign({ app: "family", from: ME, pw: IS_ME ? PW() : "" }, body)) });
+    const j = await r.json();
+    if (j && j.ok){ accept(j.data); setSync("on", "저장됨"); return j; }
+    setSync("err", j && j.error === "pw" ? "비밀번호가 맞지 않습니다 (설정 → 코드 다시 입력)" : "저장 실패");
+    return j || {};
+  } catch(e){ setSync("err", "저장 실패 · 인터넷 확인"); return {}; }
+  finally { busy = false; }
+}
+
+/* ---------- 공통 ---------- */
+function header(title, sub){
+  const t = el("div", "top"), l = el("div");
+  l.append(el("h1", null, title));
+  const s = el("span", "sync", ""); s.id = "sync"; l.appendChild(s);
+  t.appendChild(l);
+  if (sub) t.appendChild(sub);
+  return t;
+}
+function render(){
+  const app = $("app"); app.innerHTML = "";
+  ({ schedule: renderSchedule, admin: renderAdmin, msg: renderMsg, settings: renderSettings }[TAB] || renderSchedule)(app);
+  setSync(sync);
+}
+
+/* ---------- 주간 스케줄 ---------- */
+function weekOf(k){ const w = data.schedule.weeks[k]; return w ? { add: w.add || [], skip: w.skip || [] } : { add: [], skip: [] }; }
+function eventsOn(wk, di){
+  const w = weekOf(wk), out = [];
+  data.schedule.fixed.filter(e => +e.d === di).forEach(e => out.push({ e, fixed: true, skip: w.skip.includes(e.id) }));
+  w.add.filter(e => +e.d === di).forEach(e => out.push({ e, fixed: false, skip: false }));
+  return out.sort((a, b) => (a.e.s || "99") < (b.e.s || "99") ? -1 : 1);
+}
+async function saveSchedule(){ await send({ action: "schedule", schedule: data.schedule, places: data.places }); render(); }
+function renderSchedule(app){
+  let tools = null;
+  if (IS_ME){
+    tools = el("button", "btn sm" + (editing ? " primary" : ""), editing ? "편집 끝" : "편집");
+    tools.type = "button"; tools.onclick = () => { editing = !editing; render(); };
+  }
+  app.appendChild(header("주간 스케줄", tools));
+  const nav = el("div", "weeknav"), nv = el("span", "nv");
+  const pv = el("button", null, "‹"); pv.type = "button"; pv.setAttribute("aria-label", "지난주");
+  const nx = el("button", null, "›"); nx.type = "button"; nx.setAttribute("aria-label", "다음 주");
+  const m = parseD(week);
+  pv.onclick = () => { week = ymd(addDays(m, -7)); render(); };
+  nx.onclick = () => { week = ymd(addDays(m, 7)); render(); };
+  nv.append(pv, el("b", null, `${md(m)} ~ ${md(addDays(m, 6))}`), nx);
+  const tw = el("button", "btn ghost sm", "이번 주"); tw.type = "button"; tw.onclick = () => { week = monday(new Date()); render(); };
+  nav.append(nv, tw); app.appendChild(nav);
+
+  const td = today();
+  for (let i = 0; i < 7; i++){
+    const d = addDays(m, i), k = ymd(d), box = el("section", "day" + (k === td ? " today" : ""));
+    const h = el("h3", i === 5 ? "sat" : i === 6 ? "sun" : null, `${md(d)} (${WD[i]})`);
+    if (k === td) h.appendChild(el("span", "now", "오늘"));
+    box.appendChild(h);
+    const list = eventsOn(week, i);
+    if (!list.length) box.appendChild(el("div", "none", "일정 없음"));
+    list.forEach(x => box.appendChild(evRow(x, i)));
+    const a = data.days[k];
+    if (a && (a.dinner || a.pickup)){
+      const inf = el("div", "info");
+      if (a.dinner){ const s = el("span"); s.append("🍚 저녁 ", el("b", null, a.dinner === "yes" ? "먹음" : "안 먹음")); inf.appendChild(s); }
+      if (a.pickup){ const s = el("span"); s.append("🚗 데리러 ", el("b", null, a.pickup)); inf.appendChild(s); }
+      box.appendChild(inf);
+    }
+    app.appendChild(box);
+  }
+  if (IS_ME && editing) app.appendChild(addForm());
+  if (!IS_ME) app.appendChild(el("p", "muted", "일정은 온유가 정리합니다. '매주'는 매주 반복, '이번 주'는 그 주에만 있는 일정입니다."));
+}
+function evRow(x, di){
+  const r = el("div", "ev" + (x.skip ? " skip" : ""));
+  r.appendChild(el("span", "tm", (x.e.s || "") + (x.e.e ? "–" + x.e.e : "")));
+  const tt = el("span", "tt"); tt.appendChild(el("span", "nm", x.e.t || ""));
+  if (x.e.p) tt.appendChild(el("small", null, x.e.p));
+  tt.appendChild(el("span", "tag " + (x.fixed ? "f" : "w"), x.skip ? "이번 주 쉼" : x.fixed ? "매주" : "이번 주"));
+  r.appendChild(tt);
+  const right = el("span", "acts");
+  if (IS_ME && editing){
+    if (x.fixed){
+      const sk = el("button", null, x.skip ? "되살리기" : "이번 주 빼기"); sk.type = "button";
+      sk.onclick = () => {
+        const w = data.schedule.weeks[week] = Object.assign({ add: [], skip: [] }, data.schedule.weeks[week]);
+        w.skip = x.skip ? w.skip.filter(id => id !== x.e.id) : w.skip.concat([x.e.id]);
+        saveSchedule();
+      };
+      right.appendChild(sk);
+    }
+    const del = el("button", null, x.fixed ? "매주 삭제" : "삭제"); del.type = "button";
+    del.onclick = () => {
+      if (!del.classList.contains("arm")){ del.classList.add("arm"); del.textContent = "정말?"; setTimeout(() => { del.classList.remove("arm"); del.textContent = x.fixed ? "매주 삭제" : "삭제"; }, 3000); return; }
+      if (x.fixed) data.schedule.fixed = data.schedule.fixed.filter(e => e.id !== x.e.id);
+      else { const w = data.schedule.weeks[week]; w.add = w.add.filter(e => e.id !== x.e.id); }
+      saveSchedule();
+    };
+    right.appendChild(del);
+  }
+  if (right.children.length) r.appendChild(right);
+  return r;
+}
+function addForm(){
+  const c = el("section", "card");
+  c.appendChild(el("h2", null, "일정 추가"));
+  const f = el("div", "addf");
+  const dsel = el("select"); WD.forEach((w, i) => dsel.add(new Option(w + "요일", i))); dsel.setAttribute("aria-label", "요일");
+  dsel.value = String(Math.max(0, Math.min(6, wdIdx(new Date()))));
+  const s = el("input"); s.type = "time"; s.value = "16:00"; s.setAttribute("aria-label", "시작 시각");
+  const e = el("input"); e.type = "time"; e.value = "18:00"; e.setAttribute("aria-label", "끝 시각");
+  const t = el("input", "t2"); t.type = "text"; t.placeholder = "일정 (예: 수학 학원)"; t.setAttribute("aria-label", "일정 이름");
+  const p = el("input", "t2"); p.type = "text"; p.placeholder = "장소 (선택, 예: 학원)"; p.setAttribute("aria-label", "장소");
+  p.setAttribute("list", "plist");
+  const dl = el("datalist"); dl.id = "plist"; data.places.forEach(x => dl.appendChild(new Option(x)));
+  const kind = el("div", "chips full");
+  let rep = true;
+  const k1 = el("button", "chip", "매주 반복"), k2 = el("button", "chip", `이번 주만 (${md(parseD(week))} 주)`);
+  [k1, k2].forEach(b => b.type = "button");
+  const paint = () => { k1.setAttribute("aria-pressed", rep); k2.setAttribute("aria-pressed", !rep); };
+  k1.onclick = () => { rep = true; paint(); }; k2.onclick = () => { rep = false; paint(); }; paint();
+  kind.append(k1, k2);
+  const add = el("button", "btn primary full", "추가"); add.type = "button";
+  const msg = el("div", "done full");
+  add.onclick = async () => {
+    if (!t.value.trim()){ msg.className = "done full err"; msg.textContent = "일정 이름을 입력하세요."; t.focus(); return; }
+    const ev = { id: uid(), d: +dsel.value, s: s.value, e: e.value, t: t.value.trim(), p: p.value.trim() };
+    if (rep) data.schedule.fixed.push(ev);
+    else { const w = data.schedule.weeks[week] = Object.assign({ add: [], skip: [] }, data.schedule.weeks[week]); w.add.push(ev); }
+    if (ev.p && !data.places.includes(ev.p)) data.places.push(ev.p);
+    await saveSchedule();
+  };
+  f.append(dsel, s, e, t, p, dl, kind, add, msg);
+  c.appendChild(f);
+  return c;
+}
+
+/* ---------- 관리 (온유만) ---------- */
+function renderAdmin(app){
+  app.appendChild(header("관리"));
+  if (!IS_ME){ app.appendChild(el("p", "muted", "온유만 볼 수 있는 화면입니다.")); return; }
+  app.appendChild(answerCard());
+  app.appendChild(sendCard());
+  app.appendChild(inboxCard());
+  app.appendChild(placesCard());
+}
+function answerCard(){
+  const c = el("section", "card"), d = new Date(), k = today(), wk = wdIdx(d) < 5;
+  const cur = data.days[k] || {};
+  const h = el("h2", null, "오늘 답하기"); h.appendChild(el("span", "meta", `${md(d)} (${WD[wdIdx(d)]})`)); c.appendChild(h);
+  let dinner = cur.dinner || "", pickup = cur.pickup || "";
+  c.appendChild(el("div", "lab", "🍚 오늘 저녁 → 엄마에게 바로 알림"));
+  const dc = el("div", "chips");
+  [["yes", "집에서 먹어요"], ["no", "안 먹어요"]].forEach(([v, n]) => {
+    const b = el("button", "chip", n); b.type = "button"; b.dataset.v = v;
+    b.onclick = () => { dinner = v; dc.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", x.dataset.v === dinner)); };
+    b.setAttribute("aria-pressed", dinner === v); dc.appendChild(b);
+  });
+  c.appendChild(dc);
+  c.appendChild(el("div", "lab", "🚗 데리러 올 곳 → 아빠에게 " + (wk ? "오후 9시 알림" : "평일 오후 9시 알림")));
+  /* 자주 쓰는 장소 + 오늘 일정의 장소 */
+  const opts = [];
+  eventsOn(monday(d), wdIdx(d)).forEach(x => { if (!x.skip && x.e.p && !opts.includes(x.e.p)) opts.push(x.e.p); });
+  data.places.forEach(p => { if (!opts.includes(p)) opts.push(p); });
+  opts.push("필요 없음");
+  const pc = el("div", "chips");
+  const other = el("input"); other.type = "text"; other.placeholder = "직접 입력 (예: 정문 앞)"; other.setAttribute("aria-label", "데리러 올 곳 직접 입력");
+  other.style.marginTop = "8px"; other.style.width = "100%";
+  if (pickup && !opts.includes(pickup)) other.value = pickup;
+  const paint = () => pc.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", x.dataset.v === pickup));
+  opts.forEach(o => { const b = el("button", "chip", o); b.type = "button"; b.dataset.v = o; b.onclick = () => { pickup = o; other.value = ""; paint(); }; pc.appendChild(b); });
+  other.oninput = () => { pickup = other.value.trim(); paint(); };
+  paint();
+  c.append(pc, other);
+  const go = el("button", "btn primary", cur.at ? "다시 보내기" : "보내기"); go.type = "button"; go.style.marginTop = "12px";
+  const msg = el("div", "done");
+  if (cur.at) msg.textContent = `보낸 답: 저녁 ${cur.dinner === "yes" ? "먹음" : cur.dinner === "no" ? "안 먹음" : "—"} · 데리러 ${cur.pickup || "—"}`;
+  go.onclick = async () => {
+    if (!dinner && !pickup){ msg.className = "done err"; msg.textContent = "저녁이나 데리러 올 곳 중 하나는 골라 주세요."; return; }
+    go.disabled = true;
+    const j = await send({ action: "answer", date: k, dinner, pickup });
+    go.disabled = false;
+    if (j.ok){ render(); const m = document.querySelector(".card .done"); if (m){ m.className = "done"; m.textContent = (dinner !== cur.dinner && dinner ? "엄마에게 저녁 알림을 보냈습니다. " : "") + (pickup ? "아빠는 오후 9시에 알림을 받습니다." : "저장했습니다."); } }
+    else { msg.className = "done err"; msg.textContent = "보내지 못했습니다. 인터넷을 확인하세요."; }
+  };
+  c.append(go, msg);
+  return c;
+}
+function sendCard(){
+  const c = el("section", "card");
+  c.appendChild(el("h2", null, "알림 보내기"));
+  c.appendChild(el("div", "lab", "받는 사람"));
+  const to = new Set(["0001"]);
+  const ch = el("div", "chips");
+  ["0001", "0002"].forEach(r => {
+    const b = el("button", "chip", PEOPLE[r]); b.type = "button";
+    const paint = () => b.setAttribute("aria-pressed", to.has(r)); paint();
+    b.onclick = () => { to.has(r) ? to.delete(r) : to.add(r); paint(); };
+    ch.appendChild(b);
+  });
+  c.appendChild(ch);
+  c.appendChild(el("div", "lab", "내용"));
+  const ta = el("textarea"); ta.placeholder = "예: 오늘 30분 늦게 끝나요"; ta.setAttribute("aria-label", "보낼 내용");
+  c.appendChild(ta);
+  const go = el("button", "btn primary", "보내기"); go.type = "button"; go.style.marginTop = "8px";
+  const msg = el("div", "done");
+  go.onclick = async () => {
+    if (!to.size){ msg.className = "done err"; msg.textContent = "받는 사람을 고르세요."; return; }
+    if (!ta.value.trim()){ msg.className = "done err"; msg.textContent = "내용을 입력하세요."; ta.focus(); return; }
+    go.disabled = true;
+    const j = await send({ action: "msg", to: [...to], text: ta.value });
+    go.disabled = false;
+    if (j.ok){ const names = [...to].map(r => PEOPLE[r]).join(", "); render(); const m = document.querySelectorAll(".card .done")[1]; if (m){ m.className = "done"; m.textContent = `${names}에게 보냈습니다.`; } }
+    else { msg.className = "done err"; msg.textContent = "보내지 못했습니다."; }
+  };
+  c.append(go, msg);
+  return c;
+}
+function inboxCard(){
+  const c = el("section", "card");
+  const list = data.msgs.slice().reverse().slice(0, 40);
+  const h = el("h2", null, "주고받은 메시지"); h.appendChild(el("span", "meta", list.length ? `최근 ${list.length}개` : "")); c.appendChild(h);
+  if (!list.length){ c.appendChild(el("p", "muted", "아직 메시지가 없습니다.")); return c; }
+  const ul = el("ul", "mlist");
+  list.forEach(m => {
+    const li = el("li"), who = el("span", "who"), b = el("b", null, `${PEOPLE[m.from] || m.from} → ${PEOPLE[m.to] || m.to}`);
+    li.style.setProperty("--c", PCOL[m.from] || "var(--ink)");
+    who.append(b, document.createTextNode(" · " + when(m.at)));
+    li.append(who, document.createTextNode(m.text));
+    ul.appendChild(li);
+  });
+  c.appendChild(ul);
+  return c;
+}
+function placesCard(){
+  const c = el("section", "card");
+  c.appendChild(el("h2", null, "자주 쓰는 장소"));
+  const ch = el("div", "chips");
+  data.places.forEach((p, i) => {
+    const b = el("button", "chip", p + "  ✕"); b.type = "button"; b.setAttribute("aria-label", p + " 삭제");
+    b.onclick = () => { data.places.splice(i, 1); saveSchedule(); };
+    ch.appendChild(b);
+  });
+  const row = el("div", "row"); row.style.marginTop = "10px";
+  const inp = el("input"); inp.type = "text"; inp.placeholder = "장소 추가"; inp.setAttribute("aria-label", "장소 추가"); inp.style.flex = "1";
+  const ad = el("button", "btn sm", "추가"); ad.type = "button";
+  ad.onclick = () => { const v = inp.value.trim(); if (v && !data.places.includes(v)){ data.places.push(v); saveSchedule(); } };
+  inp.onkeydown = e => { if (e.key === "Enter" && !e.isComposing) ad.click(); };
+  row.append(inp, ad);
+  c.append(ch, row, el("p", "muted", "'오늘 답하기'와 일정 장소에서 골라 쓸 수 있습니다."));
+  return c;
+}
+function when(iso){
+  const d = new Date(iso); if (isNaN(d)) return "";
+  const t = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  return ymd(d) === today() ? `오늘 ${t}` : `${md(d)} (${WD[wdIdx(d)]}) ${t}`;
+}
+
+/* ---------- 메시지 (엄마 · 아빠) ---------- */
+function renderMsg(app){
+  app.appendChild(header("온유에게"));
+  const c = el("section", "card");
+  const list = data.msgs.filter(m => (m.from === ME && m.to === "0000") || (m.from === "0000" && m.to === ME)).slice(-40);
+  const box = el("div", "msgs");
+  if (!list.length) box.appendChild(el("p", "muted", "아직 주고받은 메시지가 없습니다."));
+  list.forEach(m => {
+    const b = el("div", "bub" + (m.from === ME ? " mine" : ""));
+    b.appendChild(el("span", "who", (m.from === ME ? "나" : "온유") + " · " + when(m.at)));
+    b.appendChild(document.createTextNode(m.text));
+    box.appendChild(b);
+  });
+  c.appendChild(box); app.appendChild(c);
+  const f = el("section", "card");
+  f.appendChild(el("h2", null, "온유에게 보내기"));
+  const ta = el("textarea"); ta.placeholder = "예: 오늘 엄마 늦어. 냉장고에 반찬 있어"; ta.setAttribute("aria-label", "보낼 내용");
+  const go = el("button", "btn primary", "보내기"); go.type = "button"; go.style.marginTop = "8px";
+  const msg = el("div", "done");
+  go.onclick = async () => {
+    if (!ta.value.trim()){ msg.className = "done err"; msg.textContent = "내용을 입력하세요."; ta.focus(); return; }
+    go.disabled = true;
+    const j = await send({ action: "msg", to: ["0000"], text: ta.value });
+    go.disabled = false;
+    if (j.ok){ render(); window.scrollTo({ top: document.body.scrollHeight }); }
+    else { msg.className = "done err"; msg.textContent = "보내지 못했습니다. 인터넷을 확인하세요."; }
+  };
+  f.append(ta, go, msg); app.appendChild(f);
+  setTimeout(() => window.scrollTo({ top: document.body.scrollHeight }), 0);
+}
+
+/* ---------- 설정 ---------- */
+const SETTINGS = {
+  "0000": [["n_am", "아침 8:00 할 일 알림", "오늘 할 일 · 밀린 일 · D-day"], ["n_pm", "저녁 5:50 할 일 알림", "오늘 한 일 · 남은 일 · 내일 할 일"],
+           ["n_ask", "아침 8:50 저녁·데리러 질문", "월~금, 누르면 '오늘 답하기'로 이동"], ["n_msg", "엄마·아빠 메시지 알림", ""]],
+  "0001": [["n_msg", "온유 저녁 식사 · 메시지 알림", "온유가 답하면 바로 옵니다"]],
+  "0002": [["n_pickup", "오후 9시 데리러 갈 곳 알림", "월~금"], ["n_msg", "온유 메시지 알림", ""]]
+};
+function renderSettings(app){
+  app.appendChild(header("설정"));
+  const c = el("section", "card");
+  const h = el("h2", null, "알림"); h.appendChild(el("span", "meta", `${PEOPLE[ME] || "?"} (${ME})`)); c.appendChild(h);
+  if (!HAS_APP){ c.appendChild(el("p", "muted", "알림 설정은 휴대폰 앱에서만 할 수 있습니다.")); app.appendChild(c); return; }
+  let prefs = {}; try { prefs = JSON.parse(App.prefs()); } catch(e){}
+  (SETTINGS[ME] || []).forEach(([k, n, sub]) => {
+    const row = el("div", "sw"), l = el("div");
+    l.append(el("span", null, n)); if (sub) l.appendChild(el("small", null, sub));
+    const t = el("button", "tg"); t.type = "button"; t.setAttribute("role", "switch"); t.setAttribute("aria-label", n);
+    t.setAttribute("aria-checked", prefs[k] !== false);
+    t.onclick = () => { const on = t.getAttribute("aria-checked") !== "true"; t.setAttribute("aria-checked", on); App.setPref(k, on); };
+    row.append(l, t); c.appendChild(row);
+  });
+  app.appendChild(c);
+  const c2 = el("section", "card");
+  c2.appendChild(el("h2", null, "이 휴대폰"));
+  c2.appendChild(el("p", "muted", `앱 버전 ${App.version()} · 식별 코드를 잘못 넣었으면 다시 입력할 수 있습니다.`));
+  const b = el("button", "btn", "식별 코드 다시 입력"); b.type = "button";
+  b.onclick = () => { if (!b.classList.contains("arm")){ b.classList.add("arm"); b.textContent = "한 번 더 누르면 처음 화면으로"; return; } App.resetRole(); };
+  c2.appendChild(b);
+  app.appendChild(c2);
+}
+
+render();
+pull();
+setInterval(() => { if (document.visibilityState === "visible") pull(); }, 15000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") pull(); });
+</script>
+</body>
+</html>
