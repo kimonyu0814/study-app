@@ -214,6 +214,54 @@ class MainActivity : Activity() {
         Family.register(this)
         if (role == "0000") TodayWidget.refresh(this)
         checkUpdate()
+        checkChanges()
+    }
+
+    /** 새로 바뀐 점 (docs/changes.json) — 처음 보는 것만 한 번 보여 줌 */
+    private fun checkChanges() {
+        val role = Me.role(this)
+        Thread {
+            try {
+                val arr = org.json.JSONArray(Study.httpGet(Study.PAGES + "changes.json?t=" + System.currentTimeMillis()))
+                if (arr.length() == 0) return@Thread
+                val sp = getSharedPreferences("study", MODE_PRIVATE)
+                val seen = sp.getString("seenChange", "") ?: ""
+                val newest = arr.optJSONObject(0)?.optString("id") ?: return@Thread
+                if (newest == seen) return@Thread
+                fun forMe(o: JSONObject): Boolean {
+                    val w = o.optJSONArray("who") ?: return true
+                    for (i in 0 until w.length()) if (w.optString(i) == role) return true
+                    return false
+                }
+                val sb = StringBuilder()
+                for (i in 0 until arr.length()) {
+                    val c = arr.optJSONObject(i) ?: continue
+                    if (c.optString("id") == seen) break
+                    if (!forMe(c)) continue
+                    val items = c.optJSONArray("items") ?: continue
+                    val lines = ArrayList<String>()
+                    for (k in 0 until items.length()) {
+                        val it = items.optJSONObject(k) ?: continue
+                        if (forMe(it)) lines.add("• " + it.optString("t"))
+                    }
+                    if (lines.isEmpty()) continue
+                    if (sb.isNotEmpty()) sb.append("\n\n")
+                    sb.append(c.optString("title")).append("\n").append(lines.joinToString("\n"))
+                    if (seen.isEmpty()) break      // 처음 설치면 가장 최근 것만
+                }
+                runOnUiThread {
+                    sp.edit().putString("seenChange", newest).apply()
+                    if (sb.isNotEmpty() && !isFinishing) {
+                        AlertDialog.Builder(this)
+                            .setTitle("새로 바뀐 점")
+                            .setMessage(sb.toString())
+                            .setPositiveButton("확인", null)
+                            .show()
+                    }
+                }
+            } catch (e: Exception) {
+            }
+        }.start()
     }
 
     private fun makeWeb(i: Int): WebView {
@@ -329,12 +377,15 @@ class MainActivity : Activity() {
                     }
                 }
                 val apk = url
+                val notes = j.optString("body", "").trim()
                 if (latest > BuildConfig.VERSION_CODE && apk != null) {
                     runOnUiThread {
                         if (!isFinishing) {
                             AlertDialog.Builder(this)
                                 .setTitle("새 버전이 있습니다")
-                                .setMessage("지금 v${BuildConfig.VERSION_CODE} → 새 버전 v$latest\n\n'업데이트'를 누르면 새 APK를 내려받습니다. 다 받은 뒤 눌러서 설치하면 기록과 설정은 그대로 유지됩니다.")
+                                .setMessage("지금 v${BuildConfig.VERSION_CODE} → 새 버전 v$latest" +
+                                    (if (notes.isNotEmpty()) "\n\n[바뀐 점]\n$notes" else "") +
+                                    "\n\n'업데이트'를 누르면 새 APK를 내려받습니다. 다 받은 뒤 눌러서 설치하면 기록과 설정은 그대로 유지됩니다.")
                                 .setPositiveButton("업데이트") { _, _ ->
                                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(apk)))
                                 }

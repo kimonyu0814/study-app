@@ -6,6 +6,7 @@ on:
     paths-ignore:
       - "docs/**"
       - "README.md"
+      - "RELEASE_NOTES.md"
   workflow_dispatch:
 
 permissions:
@@ -42,6 +43,6 @@ jobs:
         with:
           tag_name: v${{ github.run_number }}
           name: 학습기록 앱 v${{ github.run_number }}
-          body: 휴대폰에서 아래 study-app.apk 를 눌러 내려받고 설치하세요.
+          body_path: RELEASE_NOTES.md
           files: study-app.apk
           make_latest: "true"
