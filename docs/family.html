@@ -80,6 +80,33 @@ textarea{width:100%;resize:vertical;min-height:70px}
 
 /* 메시지 */
 .msgs{display:flex;flex-direction:column;gap:8px}
+/* 채팅방 목록 */
+.rooms{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+.rooms li + li{border-top:1px solid var(--rule-soft)}
+.room{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;width:100%;padding:12px 14px;border:none;background:none;text-align:left;cursor:pointer}
+.av{width:44px;height:44px;border-radius:50%;background:var(--c);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem}
+.room .nm{font-weight:700;display:block}
+.room .pv{display:block;font-size:.85rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.room .rt{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:.72rem;color:var(--muted);white-space:nowrap}
+.badge{background:var(--bad);color:#fff;border-radius:999px;font-size:.72rem;font-weight:700;padding:1px 7px;min-width:20px;text-align:center}
+/* 채팅방 */
+.chathead{display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--paper);padding:8px 0 10px;z-index:2;border-bottom:1px solid var(--rule)}
+.chathead button{border:none;background:none;font-size:1.6rem;line-height:1;padding:0 8px 2px 0;cursor:pointer;color:var(--ink)}
+.chathead .av{width:34px;height:34px;font-size:.85rem}
+.chathead b{font-size:1.05rem}
+.chat{display:flex;flex-direction:column;gap:6px;padding:12px 0 8px;min-height:calc(100vh - 160px);justify-content:flex-end}
+.chat .dsep{align-self:center;font-size:.72rem;color:var(--muted);background:var(--rule-soft);border-radius:999px;padding:2px 10px;margin:8px 0 4px}
+.chat .row{display:flex;align-items:flex-end;gap:6px}
+.chat .row.mine{flex-direction:row-reverse}
+.chat .bub{max-width:75%}
+.chat .tm{font-size:.68rem;color:var(--muted);white-space:nowrap}
+.chatin{position:sticky;bottom:0;display:flex;gap:8px;align-items:flex-end;background:var(--paper);padding:10px 0 4px;border-top:1px solid var(--rule)}
+.chatin textarea{flex:1;min-height:42px;max-height:120px;resize:none;border-radius:20px;padding:10px 14px}
+.chatin .btn{border-radius:20px;height:42px}
+.seg2{display:inline-flex;border:1.5px solid var(--rule);border-radius:9px;overflow:hidden;margin-bottom:12px}
+.seg2 button{border:none;background:var(--card);padding:8px 18px;font-weight:700;cursor:pointer;color:var(--muted)}
+.seg2 button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.seg2 .badge{margin-left:6px}
 .bub{max-width:85%;padding:8px 12px;border-radius:12px;background:var(--rule-soft);overflow-wrap:anywhere;white-space:pre-wrap}
 .bub.mine{align-self:flex-end;background:var(--accent);color:#fff}
 .bub .who{display:block;font-size:.72rem;opacity:.8;margin-bottom:2px}
@@ -337,16 +364,26 @@ function addForm(){
 }
 
 /* ---------- 관리 (온유만) ---------- */
+let adminView = "today";
+try { if (localStorage.getItem("adminView") === "chat") adminView = "chat"; } catch(e){}
 function renderAdmin(app){
+  if (!IS_ME){ app.appendChild(header("관리")); app.appendChild(el("p", "muted", "온유만 볼 수 있는 화면입니다.")); return; }
+  if (adminView === "chat" && room){ chatView(app, room); return; }
   app.appendChild(header("관리"));
-  if (!IS_ME){ app.appendChild(el("p", "muted", "온유만 볼 수 있는 화면입니다.")); return; }
+  const sg = el("div", "seg2");
+  [["today", "오늘 답하기"], ["chat", "채팅"]].forEach(([k, n]) => {
+    const b = el("button", null, n); b.type = "button"; b.setAttribute("aria-pressed", adminView === k);
+    if (k === "chat"){ const u = totalUnread(); if (u) b.appendChild(el("span", "badge", String(u))); }
+    b.onclick = () => { adminView = k; try { localStorage.setItem("adminView", k); } catch(e){} render(); };
+    sg.appendChild(b);
+  });
+  app.appendChild(sg);
+  if (adminView === "chat"){ app.appendChild(roomList()); return; }
   const d = new Date();
   app.appendChild(el("p", "muted", `${md(d)} (${WD[wdIdx(d)]}) · ` + (isWeekend(d) ? "주말에는 밥 · 데리러를 보낼 시각을 직접 정합니다." : "주중에는 밥 · 데리러가 오후 9시에 각각 갑니다.")));
   app.appendChild(itemCard("dinner"));
   app.appendChild(itemCard("pickup"));
   app.appendChild(homeCard());
-  app.appendChild(sendCard());
-  app.appendChild(inboxCard());
   app.appendChild(placesCard());
 }
 /* 오늘 하루 정보 (예전 형식도 읽기) */
@@ -513,55 +550,77 @@ function when(iso){
 }
 
 /* ---------- 메시지 (엄마 · 아빠) ---------- */
-function renderMsg(app){
-  app.appendChild(header("메시지"));
-  const c = el("section", "card");
-  /* 나와 관련된 메시지 (여러 명에게 한 번에 보낸 건 하나로) */
-  const mine = data.msgs.filter(m => m.from === ME || m.to === ME);
-  const grouped = [];
-  mine.forEach(m => {
-    const last = grouped[grouped.length - 1];
-    if (last && m.from === ME && last.from === ME && last.text === m.text && last.at === m.at) last.to.push(m.to);
-    else grouped.push({ from: m.from, to: [m.to], text: m.text, at: m.at });
+/* ---------- 채팅 (사람별 방) ---------- */
+let room = null;
+const ROLES = ["0000", "0001", "0002", "0003"];
+const NAME = r => r === "0000" && ME === "0003" ? "오빠" : (PEOPLE[r] || r);
+function roomMsgs(x){ return data.msgs.filter(m => (m.from === ME && m.to === x) || (m.from === x && m.to === ME)); }
+function seenMap(){ try { return JSON.parse(localStorage.getItem("chatSeen")) || {}; } catch(e){ return {}; } }
+function unread(x){ const s = seenMap()[x] || ""; return roomMsgs(x).filter(m => m.from === x && m.at > s).length; }
+function totalUnread(){ return ROLES.filter(r => r !== ME).reduce((a, r) => a + unread(r), 0); }
+function markSeen(x){
+  const ms = roomMsgs(x); if (!ms.length) return;
+  const m = seenMap(); m[x] = ms[ms.length - 1].at;
+  try { localStorage.setItem("chatSeen", JSON.stringify(m)); } catch(e){}
+}
+function avatar(r){ const a = el("span", "av", NAME(r).slice(0, 1)); a.style.setProperty("--c", PCOL[r] || "var(--accent)"); return a; }
+function openRoom(x){ room = x; try { history.pushState({ room: x }, ""); } catch(e){} render(); }
+window.addEventListener("popstate", e => { room = (e.state && e.state.room) || null; render(); });
+function roomList(){
+  const ul = el("ul", "rooms");
+  ROLES.filter(r => r !== ME).forEach(r => {
+    const ms = roomMsgs(r), last = ms[ms.length - 1], u = unread(r);
+    const li = el("li"), b = el("button", "room"); b.type = "button";
+    const mid = el("span"); mid.append(el("span", "nm", NAME(r)), el("span", "pv", last ? (last.from === ME ? "나: " : "") + last.text : "대화를 시작해 보세요"));
+    const rt = el("span", "rt"); rt.appendChild(el("span", null, last ? when(last.at) : ""));
+    if (u) rt.appendChild(el("span", "badge", String(u)));
+    b.append(avatar(r), mid, rt);
+    b.setAttribute("aria-label", `${NAME(r)} 채팅방` + (u ? `, 안 읽은 메시지 ${u}개` : ""));
+    b.onclick = () => openRoom(r);
+    li.appendChild(b); ul.appendChild(li);
   });
-  const list = grouped.slice(-40);
-  const box = el("div", "msgs");
-  if (!list.length) box.appendChild(el("p", "muted", "아직 주고받은 메시지가 없습니다."));
-  list.forEach(m => {
-    const me = m.from === ME;
-    const b = el("div", "bub" + (me ? " mine" : ""));
-    b.appendChild(el("span", "who", (me ? "나 → " + m.to.map(t => PEOPLE[t] || t).join(", ") : (PEOPLE[m.from] || m.from)) + " · " + when(m.at)));
-    b.appendChild(document.createTextNode(m.text));
-    box.appendChild(b);
+  return ul;
+}
+function chatView(app, x){
+  const head = el("div", "chathead");
+  const back = el("button", null, "‹"); back.type = "button"; back.setAttribute("aria-label", "채팅방 목록");
+  back.onclick = () => { if (history.state && history.state.room) history.back(); else { room = null; render(); } };
+  head.append(back, avatar(x), el("b", null, NAME(x)));
+  app.appendChild(head);
+  const box = el("div", "chat");
+  const ms = roomMsgs(x);
+  if (!ms.length) box.appendChild(el("p", "muted", `${NAME(x)}에게 첫 메시지를 보내 보세요.`));
+  let lastDay = "";
+  ms.forEach(m => {
+    const d = new Date(m.at), k = ymd(d);
+    if (k !== lastDay){ lastDay = k; box.appendChild(el("span", "dsep", k === today() ? "오늘" : `${d.getMonth() + 1}월 ${d.getDate()}일 (${WD[wdIdx(d)]})`)); }
+    const row = el("div", "row" + (m.from === ME ? " mine" : ""));
+    const b = el("div", "bub" + (m.from === ME ? " mine" : ""), m.text);
+    row.append(b, el("span", "tm", `${pad2(d.getHours())}:${pad2(d.getMinutes())}`));
+    box.appendChild(row);
   });
-  c.appendChild(box); app.appendChild(c);
-  const f = el("section", "card");
-  f.appendChild(el("h2", null, "보내기"));
-  f.appendChild(el("div", "lab", "받는 사람"));
-  const to = new Set(["0000"]);
-  const ch = el("div", "chips");
-  ["0000", "0001", "0002", "0003"].filter(r => r !== ME).forEach(r => {
-    const b = el("button", "chip", PEOPLE[r]); b.type = "button";
-    const paint = () => b.setAttribute("aria-pressed", to.has(r)); paint();
-    b.onclick = () => { to.has(r) ? to.delete(r) : to.add(r); paint(); };
-    ch.appendChild(b);
-  });
-  f.appendChild(ch);
-  const ta = el("textarea"); ta.placeholder = ME === "0003" ? "예: 피아노 끝났어요!" : "예: 오늘 엄마 늦어. 냉장고에 반찬 있어"; ta.setAttribute("aria-label", "보낼 내용");
-  ta.style.marginTop = "10px";
-  const go = el("button", "btn primary", "보내기"); go.type = "button"; go.style.marginTop = "8px";
-  const msg = el("div", "done");
+  app.appendChild(box);
+  markSeen(x);
+  const bar = el("div", "chatin");
+  const ta = el("textarea"); ta.rows = 1; ta.placeholder = "메시지"; ta.setAttribute("aria-label", `${NAME(x)}에게 보낼 메시지`);
+  ta.oninput = () => { ta.style.height = "auto"; ta.style.height = Math.min(120, ta.scrollHeight) + "px"; };
+  const go = el("button", "btn primary", "보내기"); go.type = "button";
   go.onclick = async () => {
-    if (!to.size){ msg.className = "done err"; msg.textContent = "받는 사람을 고르세요."; return; }
-    if (!ta.value.trim()){ msg.className = "done err"; msg.textContent = "내용을 입력하세요."; ta.focus(); return; }
+    const t = ta.value.trim(); if (!t){ ta.focus(); return; }
     go.disabled = true;
-    const j = await send({ action: "msg", to: [...to], text: ta.value });
+    const j = await send({ action: "msg", to: [x], text: t });
     go.disabled = false;
-    if (j.ok){ render(); window.scrollTo({ top: document.body.scrollHeight }); }
-    else { msg.className = "done err"; msg.textContent = why(j); }
+    if (j.ok){ ta.value = ""; render(); }
+    else { ta.blur(); alert(why(j)); }
   };
-  f.append(ta, go, msg); app.appendChild(f);
+  bar.append(ta, go);
+  app.appendChild(bar);
   setTimeout(() => window.scrollTo({ top: document.body.scrollHeight }), 0);
+}
+function renderMsg(app){
+  if (room){ chatView(app, room); return; }
+  app.appendChild(header("채팅"));
+  app.appendChild(roomList());
 }
 
 /* ---------- 설정 ---------- */
