@@ -54,6 +54,19 @@ object TaePlan {
         return out
     }
 
+    /** 태은이용 12시간제: "15:00" → "오후 3:00" */
+    fun kid(hm: String): String = try {
+        val t = LocalTime.parse(hm)
+        (if (t.hour < 12) "오전 " else "오후 ") + (if (t.hour % 12 == 0) 12 else t.hour % 12) + ":" + String.format("%02d", t.minute)
+    } catch (e: Exception) { hm }
+
+    fun kidRange(s: String, e: String): String {
+        val a = kid(s)
+        if (e.isEmpty()) return a
+        val b = kid(e)
+        return if (a.take(2) == b.take(2)) a + "–" + b.drop(3) else "$a–$b"
+    }
+
     private fun time(day: LocalDate, hm: String): ZonedDateTime? = try {
         day.atTime(LocalTime.parse(hm)).atZone(Study.KST)
     } catch (e: Exception) { null }
@@ -67,7 +80,7 @@ object TaePlan {
             var study = false
             for (e in evs) {
                 val start = time(day, e.s) ?: continue
-                val span = e.s + (if (e.e.isNotEmpty()) "–" + e.e else "")
+                val span = kidRange(e.s, e.e)
                 when {
                     e.t.contains("집공부") -> {
                         study = true

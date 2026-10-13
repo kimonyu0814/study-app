@@ -61,7 +61,7 @@ textarea{width:100%;resize:vertical;min-height:70px}
 .day h3{margin:0 0 4px;font-size:.92rem;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
 .day h3 .now{font-size:.7rem;color:#fff;background:var(--accent);border-radius:999px;padding:0 7px}
 .day h3.sat{color:var(--accent)} .day h3.sun{color:var(--bad)}
-.ev{display:grid;grid-template-columns:92px 1fr;gap:2px 8px;align-items:baseline;padding:7px 0;border-top:1px solid var(--rule-soft)}
+.ev{display:grid;grid-template-columns:var(--tmw,92px) 1fr;gap:2px 8px;align-items:baseline;padding:7px 0;border-top:1px solid var(--rule-soft)}
 .ev .tm{font-size:.82rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .ev .tt{font-weight:700;min-width:0;overflow-wrap:anywhere}
 .ev .tt small{font-weight:500;color:var(--muted);margin-left:6px}
@@ -312,7 +312,7 @@ function renderSchedule(app){
 }
 function evRow(x, di){
   const r = el("div", "ev" + (x.skip ? " skip" : ""));
-  r.appendChild(el("span", "tm", (x.e.s || "") + (x.e.e ? "–" + x.e.e : "")));
+  r.appendChild(el("span", "tm", tRange(x.e.s, x.e.e)));
   const tt = el("span", "tt"); tt.appendChild(el("span", "nm", x.e.t || ""));
   if (x.e.p) tt.appendChild(el("small", null, x.e.p));
   tt.appendChild(el("span", "tag " + (x.fixed ? "f" : "w"), x.skip ? "이번 주 쉼" : x.fixed ? "매주" : "이번 주"));
@@ -558,9 +558,18 @@ function hm(t){
   const m = /^(\d{1,2}):(\d{2})$/.exec(t || ""); if (!m) return t || "";
   const h = +m[1]; return `${h < 12 ? "오전" : "오후"} ${h % 12 || 12}:${m[2]}`;
 }
+/* 태은이 화면은 12시간제 (오후 3:00) */
+const KID = ME === "0003";
+function T(t){ return KID ? hm(t) : t; }
+function tRange(s0, e0){
+  if (!KID) return (s0 || "") + (e0 ? "–" + e0 : "");
+  const a = hm(s0), b = e0 ? hm(e0) : "";
+  if (!b) return a;
+  return a.slice(0, 2) === b.slice(0, 2) ? `${a}–${b.slice(3)}` : `${a}–${b}`;
+}
 function when(iso){
   const d = new Date(iso); if (isNaN(d)) return "";
-  const t = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  const t = T(`${pad2(d.getHours())}:${pad2(d.getMinutes())}`);
   return ymd(d) === today() ? `오늘 ${t}` : `${md(d)} (${WD[wdIdx(d)]}) ${t}`;
 }
 
@@ -720,7 +729,7 @@ function chatView(app, x){
     const row = el("div", "row" + (m.from === ME ? " mine" : ""));
     const b = el("div", "bub" + (m.from === ME ? " mine" : ""));
     msgBody(b, m);
-    row.append(b, el("span", "tm", `${pad2(d.getHours())}:${pad2(d.getMinutes())}`));
+    row.append(b, el("span", "tm", T(`${pad2(d.getHours())}:${pad2(d.getMinutes())}`)));
     box.appendChild(row);
   });
   app.appendChild(box);
@@ -824,6 +833,7 @@ function renderSettings(app){
   app.appendChild(c2);
 }
 
+if (KID) document.documentElement.style.setProperty("--tmw", "128px");
 render();
 pull();
 setInterval(() => { if (document.visibilityState === "visible") pull(); }, 15000);
