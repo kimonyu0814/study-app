@@ -10,7 +10,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZonedDateTime
 
-/** 태은이 시간표로 알림 만들기: 학원 10분 전 · 집공부 시작 · 오후 9시 끝 */
+/** 태은이 시간표로 알림 만들기: 학원 30분 전 · 집공부 시작 · 오후 9시 끝 */
 object TaePlan {
     class Ev(val d: Int, val s: String, val e: String, val t: String)
     class Note(val at: ZonedDateTime, val title: String, val body: String, val pref: String)
@@ -88,7 +88,7 @@ object TaePlan {
                         out.add(Note(start, "집공부 시간이에요 📚", if (subj != null) "오늘 할 것: $subj ($span)" else "공부를 시작해요 ($span)", "n_study"))
                     }
                     e.t.contains("귀가") || e.t.contains("저녁") || e.t.contains("빈 시간") -> { }
-                    else -> out.add(Note(start.minusMinutes(10), "10분 뒤 ${e.t}", "$span · 준비물 챙겨요!", "n_class"))
+                    else -> out.add(Note(start.minusMinutes(30), "30분 뒤 ${e.t}", "$span · 준비물 챙겨요!", "n_class"))
                 }
             }
             if (study && day.dayOfWeek.value <= 5) {
