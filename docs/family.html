@@ -100,6 +100,7 @@ textarea{width:100%;resize:vertical;min-height:70px}
 .chat .row.mine{flex-direction:row-reverse}
 .chat .bub{max-width:75%}
 .chat .tm{font-size:.68rem;color:var(--muted);white-space:nowrap}
+.chat .bub .who{display:block;font-size:.7rem;font-weight:700;opacity:.8;margin-bottom:2px}
 .chatin{position:sticky;bottom:0;display:flex;gap:8px;align-items:flex-end;background:var(--paper);padding:10px 0 4px;border-top:1px solid var(--rule)}
 .chatin textarea{flex:1;min-height:42px;max-height:120px;resize:none;border-radius:20px;padding:10px 14px}
 .chatin .btn{border-radius:20px;height:42px}
@@ -365,13 +366,14 @@ function addForm(){
 
 /* ---------- 관리 (온유만) ---------- */
 let adminView = "today";
-try { if (localStorage.getItem("adminView") === "chat") adminView = "chat"; } catch(e){}
+try { const v = localStorage.getItem("adminView"); if (v === "chat" || v === "all") adminView = v; } catch(e){}
 function renderAdmin(app){
   if (!IS_ME){ app.appendChild(header("관리")); app.appendChild(el("p", "muted", "온유만 볼 수 있는 화면입니다.")); return; }
   if (adminView === "chat" && room){ chatView(app, room); return; }
+  if (adminView === "all" && pair){ pairView(app, pair); return; }
   app.appendChild(header("관리"));
   const sg = el("div", "seg2");
-  [["today", "오늘 답하기"], ["chat", "채팅"]].forEach(([k, n]) => {
+  [["today", "오늘 답하기"], ["chat", "채팅"], ["all", "전체 채팅"]].forEach(([k, n]) => {
     const b = el("button", null, n); b.type = "button"; b.setAttribute("aria-pressed", adminView === k);
     if (k === "chat"){ const u = totalUnread(); if (u) b.appendChild(el("span", "badge", String(u))); }
     b.onclick = () => { adminView = k; try { localStorage.setItem("adminView", k); } catch(e){} render(); };
@@ -379,6 +381,7 @@ function renderAdmin(app){
   });
   app.appendChild(sg);
   if (adminView === "chat"){ app.appendChild(roomList()); return; }
+  if (adminView === "all"){ app.appendChild(pairList()); return; }
   const d = new Date();
   app.appendChild(el("p", "muted", `${md(d)} (${WD[wdIdx(d)]}) · ` + (isWeekend(d) ? "주말에는 밥 · 데리러를 보낼 시각을 직접 정합니다." : "주중에는 밥 · 데리러가 오후 9시에 각각 갑니다.")));
   app.appendChild(itemCard("dinner"));
@@ -565,7 +568,57 @@ function markSeen(x){
 }
 function avatar(r){ const a = el("span", "av", NAME(r).slice(0, 1)); a.style.setProperty("--c", PCOL[r] || "var(--accent)"); return a; }
 function openRoom(x){ room = x; try { history.pushState({ room: x }, ""); } catch(e){} render(); }
-window.addEventListener("popstate", e => { room = (e.state && e.state.room) || null; render(); });
+window.addEventListener("popstate", e => { room = (e.state && e.state.room) || null; pair = (e.state && e.state.pair) || null; render(); });
+/* ---------- 관리자: 가족 모든 채팅 보기 (온유만, 읽기 전용) ---------- */
+let pair = null;
+const PAIRS = [["0001", "0002"], ["0001", "0003"], ["0002", "0003"], ["0000", "0001"], ["0000", "0002"], ["0000", "0003"]];
+function pairMsgs(p){ const [a, b] = p.split("-"); return data.msgs.filter(m => (m.from === a && m.to === b) || (m.from === b && m.to === a)); }
+function pairList(){
+  const ul = el("ul", "rooms");
+  PAIRS.forEach(([a, b]) => {
+    const k = a + "-" + b, ms = pairMsgs(k), last = ms[ms.length - 1];
+    const li = el("li"), btn = el("button", "room"); btn.type = "button";
+    const av = el("span", "av", PEOPLE[a].slice(0, 1) + PEOPLE[b].slice(0, 1));
+    av.style.setProperty("--c", PCOL[b]); av.style.fontSize = ".8rem";
+    const mid = el("span");
+    mid.append(el("span", "nm", `${PEOPLE[a]} ↔ ${PEOPLE[b]}`), el("span", "pv", last ? `${PEOPLE[last.from]}: ${last.text}` : "대화 없음"));
+    const rt = el("span", "rt"); rt.append(el("span", null, last ? when(last.at) : ""), el("span", null, ms.length ? `${ms.length}개` : ""));
+    btn.append(av, mid, rt);
+    btn.setAttribute("aria-label", `${PEOPLE[a]}와 ${PEOPLE[b]}의 채팅 보기`);
+    btn.onclick = () => { pair = k; try { history.pushState({ pair: k }, ""); } catch(e){} render(); };
+    li.appendChild(btn); ul.appendChild(li);
+  });
+  const wrap = el("div"); wrap.appendChild(ul);
+  wrap.appendChild(el("p", "muted", "가족끼리 주고받은 1:1 채팅을 모두 볼 수 있습니다 (읽기 전용, 최근 150개 메시지 안에서)."));
+  return wrap;
+}
+function pairView(app, p){
+  const [a, b] = p.split("-");
+  const head = el("div", "chathead");
+  const back = el("button", null, "‹"); back.type = "button"; back.setAttribute("aria-label", "전체 채팅 목록");
+  back.onclick = () => { if (history.state && history.state.pair) history.back(); else { pair = null; render(); } };
+  head.append(back, el("b", null, `${PEOPLE[a]} ↔ ${PEOPLE[b]}`), el("span", "muted", "읽기 전용"));
+  app.appendChild(head);
+  const box = el("div", "chat");
+  const ms = pairMsgs(p);
+  if (!ms.length) box.appendChild(el("p", "muted", "아직 주고받은 메시지가 없습니다."));
+  let lastDay = "";
+  ms.forEach(m => {
+    const d = new Date(m.at), k = ymd(d);
+    if (k !== lastDay){ lastDay = k; box.appendChild(el("span", "dsep", k === today() ? "오늘" : `${d.getMonth() + 1}월 ${d.getDate()}일 (${WD[wdIdx(d)]})`)); }
+    const right = m.from === b;
+    const row = el("div", "row" + (right ? " mine" : ""));
+    const bub = el("div", "bub");
+    bub.style.background = right ? PCOL[b] : "var(--rule-soft)";
+    if (right) bub.style.color = "#fff";
+    bub.appendChild(el("span", "who", PEOPLE[m.from]));
+    bub.appendChild(document.createTextNode(m.text));
+    row.append(bub, el("span", "tm", `${pad2(d.getHours())}:${pad2(d.getMinutes())}`));
+    box.appendChild(row);
+  });
+  app.appendChild(box);
+  setTimeout(() => window.scrollTo({ top: document.body.scrollHeight }), 0);
+}
 function roomList(){
   const ul = el("ul", "rooms");
   ROLES.filter(r => r !== ME).forEach(r => {
