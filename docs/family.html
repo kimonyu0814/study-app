@@ -104,8 +104,8 @@ textarea{width:100%;resize:vertical;min-height:70px}
 <main id="app"></main>
 <script>
 const API = "https://script.google.com/macros/s/AKfycbzwUGDOfoBCJbPQx96HCMN8vin0OPCcREB-kYGv-yiDVGkHIOlapcL85oasQRA71NdX/exec";
-const PEOPLE = { "0000": "온유", "0001": "엄마", "0002": "아빠" };
-const PCOL = { "0000": "var(--me)", "0001": "var(--mom)", "0002": "var(--dad)" };
+const PEOPLE = { "0000": "온유", "0001": "엄마", "0002": "아빠", "0003": "태은" };
+const PCOL = { "0000": "var(--me)", "0001": "var(--mom)", "0002": "var(--dad)", "0003": "var(--week)" };
 const WD = ["월", "화", "수", "목", "금", "토", "일"];
 const Q = new URLSearchParams(location.search + "&" + location.hash.slice(1));
 const TAB = Q.get("tab") || "schedule";
@@ -188,8 +188,8 @@ function render(){
 
 /* ---------- 주간 스케줄 (온유 · 태은) ---------- */
 const PERSONS = [["onyu", "온유"], ["taeeun", "태은"]];
-let who = "onyu";
-try { if (localStorage.getItem("schedWho") === "taeeun") who = "taeeun"; } catch(e){}
+let who = ME === "0003" ? "taeeun" : "onyu";
+try { const w = localStorage.getItem("schedWho"); if (w === "taeeun" || w === "onyu") who = w; } catch(e){}
 /* 태은이 기본 시간표 (d: 0=월 … 4=금) */
 const TAE_DEFAULT = { fixed: [
   ["t01",0,"15:00","","귀가 (방과후 줄넘기 후)"], ["t02",0,"15:30","17:00","미술"], ["t03",0,"17:30","19:00","영어"],
@@ -266,6 +266,7 @@ function renderSchedule(app){
     app.appendChild(box);
   }
   if (IS_ME && editing) app.appendChild(addForm());
+  if (ME === "0003" && !window.__scrolled){ window.__scrolled = true; setTimeout(() => { const t = document.querySelector(".day.today"); if (t) t.scrollIntoView({ block: "start" }); }, 0); }
   if (!IS_ME) app.appendChild(el("p", "muted", "일정은 온유가 정리합니다. '매주'는 매주 반복, '이번 주'는 그 주에만 있는 일정입니다."));
   else if (who === "taeeun") app.appendChild(el("p", "muted", "태은이 시간표입니다. 매일 오후 9시까지 공부, 주말은 비워 두었습니다."));
 }
@@ -442,7 +443,7 @@ function sendCard(){
   c.appendChild(el("div", "lab", "받는 사람"));
   const to = new Set(["0001"]);
   const ch = el("div", "chips");
-  ["0001", "0002"].forEach(r => {
+  ["0001", "0002", "0003"].forEach(r => {
     const b = el("button", "chip", PEOPLE[r]); b.type = "button";
     const paint = () => b.setAttribute("aria-pressed", to.has(r)); paint();
     b.onclick = () => { to.has(r) ? to.delete(r) : to.add(r); paint(); };
@@ -513,27 +514,48 @@ function when(iso){
 
 /* ---------- 메시지 (엄마 · 아빠) ---------- */
 function renderMsg(app){
-  app.appendChild(header("온유에게"));
+  app.appendChild(header("메시지"));
   const c = el("section", "card");
-  const list = data.msgs.filter(m => (m.from === ME && m.to === "0000") || (m.from === "0000" && m.to === ME)).slice(-40);
+  /* 나와 관련된 메시지 (여러 명에게 한 번에 보낸 건 하나로) */
+  const mine = data.msgs.filter(m => m.from === ME || m.to === ME);
+  const grouped = [];
+  mine.forEach(m => {
+    const last = grouped[grouped.length - 1];
+    if (last && m.from === ME && last.from === ME && last.text === m.text && last.at === m.at) last.to.push(m.to);
+    else grouped.push({ from: m.from, to: [m.to], text: m.text, at: m.at });
+  });
+  const list = grouped.slice(-40);
   const box = el("div", "msgs");
   if (!list.length) box.appendChild(el("p", "muted", "아직 주고받은 메시지가 없습니다."));
   list.forEach(m => {
-    const b = el("div", "bub" + (m.from === ME ? " mine" : ""));
-    b.appendChild(el("span", "who", (m.from === ME ? "나" : "온유") + " · " + when(m.at)));
+    const me = m.from === ME;
+    const b = el("div", "bub" + (me ? " mine" : ""));
+    b.appendChild(el("span", "who", (me ? "나 → " + m.to.map(t => PEOPLE[t] || t).join(", ") : (PEOPLE[m.from] || m.from)) + " · " + when(m.at)));
     b.appendChild(document.createTextNode(m.text));
     box.appendChild(b);
   });
   c.appendChild(box); app.appendChild(c);
   const f = el("section", "card");
-  f.appendChild(el("h2", null, "온유에게 보내기"));
-  const ta = el("textarea"); ta.placeholder = "예: 오늘 엄마 늦어. 냉장고에 반찬 있어"; ta.setAttribute("aria-label", "보낼 내용");
+  f.appendChild(el("h2", null, "보내기"));
+  f.appendChild(el("div", "lab", "받는 사람"));
+  const to = new Set(["0000"]);
+  const ch = el("div", "chips");
+  ["0000", "0001", "0002", "0003"].filter(r => r !== ME).forEach(r => {
+    const b = el("button", "chip", PEOPLE[r]); b.type = "button";
+    const paint = () => b.setAttribute("aria-pressed", to.has(r)); paint();
+    b.onclick = () => { to.has(r) ? to.delete(r) : to.add(r); paint(); };
+    ch.appendChild(b);
+  });
+  f.appendChild(ch);
+  const ta = el("textarea"); ta.placeholder = ME === "0003" ? "예: 피아노 끝났어요!" : "예: 오늘 엄마 늦어. 냉장고에 반찬 있어"; ta.setAttribute("aria-label", "보낼 내용");
+  ta.style.marginTop = "10px";
   const go = el("button", "btn primary", "보내기"); go.type = "button"; go.style.marginTop = "8px";
   const msg = el("div", "done");
   go.onclick = async () => {
+    if (!to.size){ msg.className = "done err"; msg.textContent = "받는 사람을 고르세요."; return; }
     if (!ta.value.trim()){ msg.className = "done err"; msg.textContent = "내용을 입력하세요."; ta.focus(); return; }
     go.disabled = true;
-    const j = await send({ action: "msg", to: ["0000"], text: ta.value });
+    const j = await send({ action: "msg", to: [...to], text: ta.value });
     go.disabled = false;
     if (j.ok){ render(); window.scrollTo({ top: document.body.scrollHeight }); }
     else { msg.className = "done err"; msg.textContent = why(j); }
@@ -546,8 +568,10 @@ function renderMsg(app){
 const SETTINGS = {
   "0000": [["n_am", "아침 8:00 할 일 알림", "오늘 할 일 · 밀린 일 · D-day"], ["n_pm", "저녁 5:50 할 일 알림", "오늘 한 일 · 남은 일 · 내일 할 일"],
            ["n_ask", "오후 8:50 밥 · 데리러 질문", "월~금, 누르면 관리 탭으로 이동"], ["n_msg", "엄마·아빠 메시지 알림", ""]],
-  "0001": [["n_dinner", "온유 밥 알림", "주중 오후 9시, 주말은 온유가 정한 시각"], ["n_home", "온유 귀가 시각 알림", "출발 · 도착 시각"], ["n_msg", "온유 메시지 알림", ""]],
-  "0002": [["n_pickup", "데리러 갈 곳 알림", "주중 오후 9시, 주말은 온유가 정한 시각"], ["n_home", "온유 귀가 시각 알림", "출발 · 도착 시각"], ["n_msg", "온유 메시지 알림", ""]]
+  "0001": [["n_dinner", "온유 밥 알림", "주중 오후 9시, 주말은 온유가 정한 시각"], ["n_home", "온유 귀가 시각 알림", "출발 · 도착 시각"], ["n_msg", "가족 메시지 알림", ""]],
+  "0002": [["n_pickup", "데리러 갈 곳 알림", "주중 오후 9시, 주말은 온유가 정한 시각"], ["n_home", "온유 귀가 시각 알림", "출발 · 도착 시각"], ["n_msg", "가족 메시지 알림", ""]],
+  "0003": [["n_class", "학원 · 활동 10분 전 알림", "예: 10분 뒤 피아노"], ["n_study", "집공부 시작 알림", "그날 할 과목도 알려 줘요"],
+           ["n_done", "오후 9시 공부 끝 알림", "월~금"], ["n_msg", "가족 메시지 알림", ""]]
 };
 function renderSettings(app){
   app.appendChild(header("설정"));

@@ -50,6 +50,11 @@ class MainActivity : Activity() {
             Tab("msg", "메시지", "family.html#tab=msg"),
             Tab("settings", "설정", "family.html#tab=settings")
         ),
+        "0003" to listOf(
+            Tab("schedule", "시간표", "family.html#tab=schedule"),
+            Tab("msg", "메시지", "family.html#tab=msg"),
+            Tab("settings", "설정", "family.html#tab=settings")
+        ),
         "0002" to listOf(
             Tab("study", "학습기록", "index.html"),
             Tab("schedule", "스케줄", "family.html#tab=schedule"),
@@ -323,6 +328,7 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        if (Me.role(this) == "0003") AlarmReceiver.scheduleAll(this)   // 시간표가 바뀌었을 수 있음
         webs.forEach { w ->
             w.onResume()
             // 다른 휴대폰에서 바꾼 내용 바로 불러오기

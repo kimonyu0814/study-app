@@ -10,23 +10,40 @@ import java.time.ZonedDateTime
 
 /** 정해진 시각 알림. 사람마다 다른 알림이 울림 */
 class AlarmReceiver : BroadcastReceiver() {
+    private var intentTitle: String? = null
+    private var intentBody: String? = null
+    private var intentPref: String? = null
 
     /** 종류, 시, 분, 평일만, 설정 이름, 받는 사람 */
     class Kind(val key: String, val h: Int, val m: Int, val weekdays: Boolean, val pref: String, val role: String)
 
     override fun onReceive(ctx: Context, intent: Intent) {
         if (intent.action != ACTION_ALARM) {
-            scheduleAll(ctx)          // 휴대폰 재시작 · 앱 업데이트 후 다시 예약
+            // 휴대폰 재시작 · 앱 업데이트 후 다시 예약
+            val p = goAsync()
+            Thread {
+                try {
+                    scheduleAll(ctx)
+                    if (Me.role(ctx) == "0003") TaePlan.scheduleNext(ctx)
+                } catch (e: Exception) {
+                } finally { p.finish() }
+            }.start()
             return
         }
         val kind = intent.getStringExtra("kind") ?: ""
+        intentTitle = intent.getStringExtra("title")
+        intentBody = intent.getStringExtra("body")
+        intentPref = intent.getStringExtra("pref")
         val pending = goAsync()
         Thread {
             try {
                 fire(ctx, kind)
             } catch (e: Exception) {
             } finally {
-                scheduleAll(ctx)
+                try {
+                    scheduleAll(ctx)
+                    if (Me.role(ctx) == "0003") TaePlan.scheduleNext(ctx)
+                } catch (e: Exception) { }
                 pending.finish()
             }
         }.start()
@@ -38,6 +55,10 @@ class AlarmReceiver : BroadcastReceiver() {
                 val s = Study.summarize(Study.load(ctx))
                 Notify.study(ctx, kind, s)
                 TodayWidget.updateAll(ctx, s)
+            }
+            "tae" -> {
+                val title = intentTitle ?: return
+                if (Me.on(ctx, intentPref ?: "n_class")) Notify.simple(ctx, 5, title, listOf(intentBody ?: ""), "schedule")
             }
             "ask" -> Notify.simple(ctx, 3, "밥 · 데리러 올 곳",
                 listOf("오후 9시에 엄마(밥) · 아빠(데리러)에게 각각 갑니다. 누르면 바로 답할 수 있습니다."), "admin")
@@ -55,6 +76,9 @@ class AlarmReceiver : BroadcastReceiver() {
         /** 이 휴대폰 주인과 설정에 맞게 모든 알림을 다시 예약 */
         fun scheduleAll(ctx: Context) {
             val role = Me.role(ctx)
+            // 태은: 시간표에 따라 다음 알림 하나씩 (인터넷에서 시간표를 받아야 해서 따로)
+            if (role == "0003") Thread { try { TaePlan.scheduleNext(ctx) } catch (e: Exception) { } }.start()
+            else TaePlan.cancel(ctx)
             val am = ctx.getSystemService(AlarmManager::class.java)
             KINDS.forEachIndexed { i, k ->
                 val intent = Intent(ctx, AlarmReceiver::class.java).setAction(ACTION_ALARM).putExtra("kind", k.key)
