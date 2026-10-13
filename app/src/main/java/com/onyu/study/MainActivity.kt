@@ -17,7 +17,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.net.Uri as AUri
 import android.webkit.JavascriptInterface
+import android.webkit.PermissionRequest
+import android.webkit.ValueCallback
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -47,18 +51,18 @@ class MainActivity : Activity() {
         "0001" to listOf(
             Tab("study", "학습기록", "index.html"),
             Tab("schedule", "스케줄", "family.html#tab=schedule"),
-            Tab("msg", "메시지", "family.html#tab=msg"),
+            Tab("msg", "채팅", "family.html#tab=msg"),
             Tab("settings", "설정", "family.html#tab=settings")
         ),
         "0003" to listOf(
             Tab("schedule", "시간표", "family.html#tab=schedule"),
-            Tab("msg", "메시지", "family.html#tab=msg"),
+            Tab("msg", "채팅", "family.html#tab=msg"),
             Tab("settings", "설정", "family.html#tab=settings")
         ),
         "0002" to listOf(
             Tab("study", "학습기록", "index.html"),
             Tab("schedule", "스케줄", "family.html#tab=schedule"),
-            Tab("msg", "메시지", "family.html#tab=msg"),
+            Tab("msg", "채팅", "family.html#tab=msg"),
             Tab("settings", "설정", "family.html#tab=settings")
         )
     )
@@ -66,6 +70,9 @@ class MainActivity : Activity() {
     private val webs = ArrayList<WebView>()
     private val buttons = ArrayList<TextView>()
     private var cur = 0
+    /* 채팅: 사진 고르기 · 마이크 */
+    private var fileCb: ValueCallback<Array<AUri>>? = null
+    private var micReq: PermissionRequest? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -276,6 +283,31 @@ class MainActivity : Activity() {
         w.settings.domStorageEnabled = true
         w.settings.cacheMode = WebSettings.LOAD_DEFAULT
         w.addJavascriptInterface(Bridge(), "App")
+        w.settings.mediaPlaybackRequiresUserGesture = false
+        w.webChromeClient = object : WebChromeClient() {
+            // 📷 사진 고르기 (앨범 · 카메라)
+            override fun onShowFileChooser(view: WebView, cb: ValueCallback<Array<AUri>>, params: FileChooserParams): Boolean {
+                fileCb?.onReceiveValue(null)
+                fileCb = cb
+                return try {
+                    val pick = Intent(Intent.ACTION_GET_CONTENT).addCategory(Intent.CATEGORY_OPENABLE).setType("image/*")
+                    startActivityForResult(Intent.createChooser(pick, "사진 고르기"), 41)
+                    true
+                } catch (e: Exception) { fileCb = null; false }
+            }
+            // 🎤 녹음: 안드로이드 마이크 권한을 받은 뒤 화면에 허용
+            override fun onPermissionRequest(request: PermissionRequest) {
+                runOnUiThread {
+                    if (!request.resources.contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) { request.deny(); return@runOnUiThread }
+                    if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                        request.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE))
+                    } else {
+                        micReq = request
+                        requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 42)
+                    }
+                }
+            }
+        }
         w.webViewClient = object : WebViewClient() {
             private fun fallback(view: WebView, req: WebResourceRequest) {
                 // 인터넷이 안 되거나 페이지가 아직 없으면 앱 안에 넣어 둔 사본
@@ -313,6 +345,24 @@ class MainActivity : Activity() {
             t.typeface = if (k == i) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
         }
         getSharedPreferences("study", MODE_PRIVATE).edit().putString("tabKey", tabs[i].key).apply()
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != 41) return
+        val uri = if (resultCode == RESULT_OK) data?.data else null
+        fileCb?.onReceiveValue(if (uri != null) arrayOf(uri) else null)
+        fileCb = null
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != 42) return
+        val r = micReq ?: return
+        micReq = null
+        if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) r.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE))
+        else r.deny()
     }
 
     override fun onNewIntent(intent: Intent) {

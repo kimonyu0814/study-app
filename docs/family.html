@@ -104,6 +104,18 @@ textarea{width:100%;resize:vertical;min-height:70px}
 .chatin{position:sticky;bottom:0;display:flex;gap:8px;align-items:flex-end;background:var(--paper);padding:10px 0 4px;border-top:1px solid var(--rule)}
 .chatin textarea{flex:1;min-height:42px;max-height:120px;resize:none;border-radius:20px;padding:10px 14px}
 .chatin .btn{border-radius:20px;height:42px}
+.chatin .ib{flex:none;width:42px;height:42px;border-radius:50%;border:1.5px solid var(--rule);background:var(--card);font-size:1.15rem;cursor:pointer;padding:0}
+.chatin .ib.rec{background:var(--bad);border-color:var(--bad);color:#fff}
+.recbar{display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--bad);font-weight:700;padding:6px 0 0}
+.recbar button{border:1px solid var(--rule);background:var(--card);border-radius:6px;padding:3px 10px;cursor:pointer;color:var(--muted);font-weight:500}
+.bub.media{padding:4px;background:var(--rule-soft)!important;color:var(--ink)!important}
+.bub img.ph{display:block;max-width:220px;max-height:280px;border-radius:9px;cursor:zoom-in}
+.bub .load{display:flex;align-items:center;justify-content:center;width:200px;height:140px;border-radius:9px;background:var(--rule);color:var(--muted);font-size:.8rem}
+.bub .play{display:inline-flex;align-items:center;gap:8px;border:none;background:var(--card);border-radius:999px;padding:8px 14px;cursor:pointer;font-weight:700;color:var(--ink)}
+.bub .gone{font-size:.82rem;color:var(--muted);padding:6px 8px;display:block}
+.bub .who{padding:0 4px}
+.viewer{position:fixed;inset:0;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;z-index:20;cursor:zoom-out}
+.viewer img{max-width:100%;max-height:100%}
 .seg2{display:inline-flex;border:1.5px solid var(--rule);border-radius:9px;overflow:hidden;margin-bottom:12px}
 .seg2 button{border:none;background:var(--card);padding:8px 18px;font-weight:700;cursor:pointer;color:var(--muted)}
 .seg2 button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
@@ -171,7 +183,7 @@ async function pull(){
   try {
     const r = await fetch(API + "?app=family&t=" + Date.now()); const j = await r.json();
     if (!j || !j.family){ setSync("err", "Apps Script 업데이트 필요"); return; }
-    if (busy || document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+    if (busy || window.__rec || document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
     accept(j.data); setSync("on"); render();
   } catch(e){ setSync("err"); }
 }
@@ -553,6 +565,64 @@ function when(iso){
 }
 
 /* ---------- 메시지 (엄마 · 아빠) ---------- */
+/* ---------- 사진 · 음성 ---------- */
+const mediaCache = {};
+function loadMedia(id){
+  if (!mediaCache[id]) mediaCache[id] = fetch(API + "?app=media&id=" + encodeURIComponent(id)).then(r => r.json()).then(j => {
+    if (!j || !j.ok) throw new Error(j && j.error || "fail");
+    const bin = atob(j.data), u = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    return URL.createObjectURL(new Blob([u], { type: j.mime }));
+  }).catch(e => { delete mediaCache[id]; throw e; });
+  return mediaCache[id];
+}
+const dur = s => `${Math.floor(s / 60)}:${pad2(Math.round(s % 60))}`;
+/* 메시지 말풍선 안의 내용 (글 · 사진 · 음성) */
+function msgBody(b, m){
+  const md_ = m.media;
+  if (!md_){ b.appendChild(document.createTextNode(m.text)); return; }
+  b.classList.add("media");
+  if (md_.gone){ b.appendChild(el("span", "gone", (md_.kind === "image" ? "📷 사진" : "🎤 음성 메시지") + " · 2개월이 지나 삭제됨")); return; }
+  if (md_.kind === "image"){
+    const ph = el("div", "load", "사진 불러오는 중…"); b.appendChild(ph);
+    loadMedia(md_.id).then(url => {
+      const img = el("img", "ph"); img.src = url; img.alt = "사진";
+      img.onclick = () => { const v = el("div", "viewer"); const big = el("img"); big.src = url; big.alt = "사진 크게 보기"; v.appendChild(big); v.onclick = () => v.remove(); document.body.appendChild(v); };
+      ph.replaceWith(img);
+    }).catch(() => { ph.textContent = "사진을 불러오지 못했습니다"; });
+  } else {
+    const btn = el("button", "play", `▶ 음성 ${md_.dur ? dur(md_.dur) : ""}`); btn.type = "button";
+    let audio = null;
+    btn.onclick = async () => {
+      try {
+        if (!audio){ btn.textContent = "불러오는 중…"; audio = new Audio(await loadMedia(md_.id)); audio.onended = () => { btn.textContent = `▶ 음성 ${md_.dur ? dur(md_.dur) : ""}`; }; }
+        if (audio.paused){ audio.play(); btn.textContent = "■ 멈춤"; } else { audio.pause(); audio.currentTime = 0; btn.textContent = `▶ 음성 ${md_.dur ? dur(md_.dur) : ""}`; }
+      } catch(e){ btn.textContent = "재생할 수 없습니다"; }
+    };
+    b.appendChild(btn);
+  }
+}
+const toB64 = blob => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = no; r.readAsDataURL(blob); });
+/* 사진: 긴 쪽 1280px, JPEG 로 줄이기 */
+function shrink(file){
+  return new Promise((ok, no) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, 1280 / Math.max(img.width, img.height));
+      const c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob(b => b ? ok(b) : no(new Error("jpeg")), "image/jpeg", 0.8);
+    };
+    img.onerror = () => no(new Error("img"));
+    img.src = url;
+  });
+}
+async function sendMedia(x, kind, blob, seconds){
+  const data = await toB64(blob);
+  return send({ action: "media", to: [x], kind, mime: blob.type || (kind === "image" ? "image/jpeg" : "audio/webm"), data, dur: seconds || 0 });
+}
+
 /* ---------- 채팅 (사람별 방) ---------- */
 let room = null;
 const ROLES = ["0000", "0001", "0002", "0003"];
@@ -612,7 +682,7 @@ function pairView(app, p){
     bub.style.background = right ? PCOL[b] : "var(--rule-soft)";
     if (right) bub.style.color = "#fff";
     bub.appendChild(el("span", "who", PEOPLE[m.from]));
-    bub.appendChild(document.createTextNode(m.text));
+    msgBody(bub, m);
     row.append(bub, el("span", "tm", `${pad2(d.getHours())}:${pad2(d.getMinutes())}`));
     box.appendChild(row);
   });
@@ -648,7 +718,8 @@ function chatView(app, x){
     const d = new Date(m.at), k = ymd(d);
     if (k !== lastDay){ lastDay = k; box.appendChild(el("span", "dsep", k === today() ? "오늘" : `${d.getMonth() + 1}월 ${d.getDate()}일 (${WD[wdIdx(d)]})`)); }
     const row = el("div", "row" + (m.from === ME ? " mine" : ""));
-    const b = el("div", "bub" + (m.from === ME ? " mine" : ""), m.text);
+    const b = el("div", "bub" + (m.from === ME ? " mine" : ""));
+    msgBody(b, m);
     row.append(b, el("span", "tm", `${pad2(d.getHours())}:${pad2(d.getMinutes())}`));
     box.appendChild(row);
   });
@@ -666,7 +737,51 @@ function chatView(app, x){
     if (j.ok){ ta.value = ""; render(); }
     else { ta.blur(); alert(why(j)); }
   };
-  bar.append(ta, go);
+  /* 📷 사진 */
+  const fileIn = el("input"); fileIn.type = "file"; fileIn.accept = "image/*"; fileIn.hidden = true;
+  const cam = el("button", "ib", "📷"); cam.type = "button"; cam.setAttribute("aria-label", "사진 보내기");
+  cam.onclick = () => fileIn.click();
+  fileIn.onchange = async () => {
+    const f = fileIn.files && fileIn.files[0]; fileIn.value = ""; if (!f) return;
+    cam.disabled = true; setSync("busy", "사진 보내는 중…");
+    try { const j = await sendMedia(x, "image", await shrink(f)); if (j.ok) render(); else alert(why(j)); }
+    catch(e){ alert("사진을 보내지 못했습니다."); }
+    cam.disabled = false;
+  };
+  /* 🎤 음성: 누르면 녹음, 다시 누르면 보내기 (최대 1분) */
+  const mic = el("button", "ib", "🎤"); mic.type = "button"; mic.setAttribute("aria-label", "음성 메시지 녹음");
+  const recbar = el("div", "recbar"); recbar.hidden = true;
+  let rec = null, chunks = [], t0 = 0, timer = null, cancel = false;
+  const stopUI = () => { clearInterval(timer); mic.classList.remove("rec"); mic.textContent = "🎤"; recbar.hidden = true; };
+  mic.onclick = async () => {
+    if (rec){ rec.stop(); return; }
+    if (!navigator.mediaDevices || !window.MediaRecorder){ alert("이 화면에서는 녹음할 수 없습니다. 앱을 업데이트해 주세요."); return; }
+    let stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+    catch(e){ alert("마이크를 쓸 수 없습니다. 마이크 권한을 허용해 주세요."); return; }
+    const type = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"].find(t => MediaRecorder.isTypeSupported(t)) || "";
+    rec = new MediaRecorder(stream, type ? { mimeType: type, audioBitsPerSecond: 32000 } : {});
+    chunks = []; cancel = false; t0 = Date.now();
+    rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+    rec.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      const secs = (Date.now() - t0) / 1000, blob = new Blob(chunks, { type: (rec.mimeType || type || "audio/webm") });
+      rec = null; window.__rec = false; stopUI();
+      if (cancel || secs < 0.7) return;
+      setSync("busy", "음성 보내는 중…");
+      const j = await sendMedia(x, "audio", blob, secs);
+      if (j.ok) render(); else alert(why(j));
+    };
+    rec.start(); window.__rec = true;
+    mic.classList.add("rec"); mic.textContent = "■";
+    recbar.hidden = false; recbar.innerHTML = "";
+    const lab = el("span", null, "● 녹음 중 0:00 · 다시 누르면 보내기");
+    const cx = el("button", null, "취소"); cx.type = "button"; cx.onclick = () => { cancel = true; if (rec) rec.stop(); };
+    recbar.append(lab, cx);
+    timer = setInterval(() => { const s2 = (Date.now() - t0) / 1000; lab.textContent = `● 녹음 중 ${dur(s2)} · 다시 누르면 보내기`; if (s2 >= 60 && rec) rec.stop(); }, 250);
+  };
+  bar.append(fileIn, cam, mic, ta, go);
+  app.appendChild(recbar);
   app.appendChild(bar);
   setTimeout(() => window.scrollTo({ top: document.body.scrollHeight }), 0);
 }
