@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; frame-src https://kimonyu0814.github.io; img-src 'self' data:">
+<title>학습기록</title>
+<style>
+:root{--paper:#FBFAF7;--card:#fff;--ink:#1F2433;--muted:#6E7180;--rule:#E4E1D8;--bad:#C2372D;--accent:#2F4A8A}
+@media (prefers-color-scheme: dark){:root{--paper:#15171D;--card:#1C1F27;--ink:#E9E8EE;--muted:#A2A5B3;--rule:#2E323D;--bad:#FF7B70;--accent:#8FA8E8}}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--paper);color:var(--ink);font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif}
+button,input{font:inherit}
+/* 처음 화면: 식별 코드 */
+.login{height:100%;display:flex;align-items:center;justify-content:center}
+.login form{width:min(340px,90vw);text-align:center}
+.login h1{font-family:"Nanum Myeongjo","Batang",serif;font-size:2.2rem;margin:0 0 6px}
+.login p{color:var(--muted);margin:0 0 22px}
+.login input{width:100%;font-size:1.6rem;text-align:center;letter-spacing:.4em;padding:12px;border:2px solid var(--rule);border-radius:10px;background:var(--card);color:var(--ink)}
+.login input:focus{outline:3px solid var(--accent);outline-offset:2px}
+.login .err{min-height:1.5em;color:var(--bad);margin:10px 0}
+.login button{width:100%;padding:13px;border:none;border-radius:10px;background:var(--ink);color:var(--paper);font-size:1.05rem;font-weight:700;cursor:pointer}
+/* 본 화면: 위쪽 탭 + 페이지 */
+.main{height:100%;display:flex;flex-direction:column}
+.bar{display:flex;align-items:center;gap:4px;background:#1F2433;padding:0 10px;flex:none}
+.bar .t{border:none;background:none;color:#8A8FA0;padding:13px 18px;font-size:.98rem;cursor:pointer;border-bottom:3px solid transparent}
+.bar .t[aria-selected="true"]{color:#fff;font-weight:700;border-bottom-color:#fff}
+.bar .sp{flex:1}
+.bar label{color:#8A8FA0;font-size:.8rem;display:flex;align-items:center;gap:6px;cursor:pointer}
+.frames{flex:1;position:relative}
+.frames iframe{position:absolute;inset:0;width:100%;height:100%;border:none;background:var(--paper)}
+.frames iframe[hidden]{display:none}
+/* 새로 바뀐 점 */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9}
+.modal[hidden]{display:none}
+.modal div{background:var(--card);color:var(--ink);border-radius:12px;padding:22px;width:min(460px,90vw)}
+.modal h2{margin:0 0 10px;font-size:1.15rem}
+.modal pre{white-space:pre-wrap;font-family:inherit;margin:0 0 16px;line-height:1.6}
+.modal button{float:right;padding:8px 18px;border:none;border-radius:8px;background:var(--ink);color:var(--paper);font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="modal" id="chg" hidden><div><h2>새로 바뀐 점</h2><pre id="chgText"></pre><button type="button" id="chgOk">확인</button></div></div>
+<script>
+const PAGES = "https://kimonyu0814.github.io/study-app/";
+const PEOPLE = { "0000": "온유", "0001": "엄마", "0002": "아빠", "0003": "태은" };
+const TABS = {
+  "0000": [["study", "학습기록", "index.html"], ["check", "정답확인", "check.html"], ["schedule", "스케줄", "family.html#tab=schedule"], ["admin", "관리", "family.html#tab=admin"], ["settings", "설정", "family.html#tab=settings"]],
+  "0001": [["study", "학습기록", "index.html"], ["schedule", "스케줄", "family.html#tab=schedule"], ["msg", "채팅", "family.html#tab=msg"], ["settings", "설정", "family.html#tab=settings"]],
+  "0002": [["study", "학습기록", "index.html"], ["schedule", "스케줄", "family.html#tab=schedule"], ["msg", "채팅", "family.html#tab=msg"], ["settings", "설정", "family.html#tab=settings"]],
+  "0003": [["schedule", "시간표", "family.html#tab=schedule"], ["msg", "채팅", "family.html#tab=msg"], ["settings", "설정", "family.html#tab=settings"]]
+};
+const $ = id => document.getElementById(id);
+const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+
+function showLogin(){
+  const root = $("root"); root.innerHTML = "";
+  const box = el("div", "login"), f = el("form");
+  const h = el("h1", null, "학습기록"), p = el("p", null, "식별 코드를 입력하세요");
+  const inp = el("input"); inp.type = "password"; inp.inputMode = "numeric"; inp.maxLength = 4; inp.setAttribute("aria-label", "식별 코드");
+  const err = el("div", "err"); err.setAttribute("aria-live", "polite");
+  const ok = el("button", null, "확인"); ok.type = "submit";
+  let askPw = false, role = "";
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const v = inp.value.trim();
+    if (!askPw){
+      if (!v){ err.textContent = "코드를 입력하세요."; return; }
+      if (!PEOPLE[v]){ err.textContent = "등록되지 않은 코드입니다."; inp.value = ""; return; }
+      role = v;
+      if (v === "0000"){ askPw = true; p.textContent = "온유 · 비밀번호를 입력하세요"; inp.value = ""; inp.maxLength = 20; err.textContent = ""; inp.focus(); return; }
+    }
+    if (askPw && !v){ err.textContent = "비밀번호를 입력하세요."; return; }
+    ok.disabled = true; err.style.color = "var(--muted)"; err.textContent = "확인 중…";
+    const r = await Shell.login(role, askPw ? v : "");
+    ok.disabled = false; err.style.color = "";
+    if (r.ok) showMain();
+    else { err.textContent = r.error === "pw" ? "비밀번호가 맞지 않습니다." : r.error === "net" ? "인터넷 연결을 확인한 뒤 다시 눌러 주세요." : "등록되지 않은 코드입니다."; inp.value = ""; inp.focus(); }
+  };
+  f.append(h, p, inp, err, ok); box.appendChild(f); root.appendChild(box);
+  setTimeout(() => inp.focus(), 50);
+}
+
+let frames = [], btns = [], tabs = [];
+function select(i){
+  frames.forEach((fr, k) => fr.hidden = k !== i);
+  btns.forEach((b, k) => b.setAttribute("aria-selected", k === i));
+  Shell.setTab(tabs[i][0]);
+  try { frames[i].contentWindow.pull && frames[i].contentWindow.pull(); } catch(e){}
+}
+function showMain(){
+  const role = App.role();
+  tabs = TABS[role] || TABS["0001"];
+  const root = $("root"); root.innerHTML = "";
+  const main = el("div", "main"), bar = el("nav", "bar"), wrap = el("div", "frames");
+  bar.setAttribute("aria-label", "메뉴");
+  frames = []; btns = [];
+  tabs.forEach(([k, n, page], i) => {
+    const b = el("button", "t", n); b.type = "button"; b.onclick = () => select(i); bar.appendChild(b); btns.push(b);
+    const fr = el("iframe"); fr.title = n; fr.hidden = true;
+    fr.allow = "microphone; autoplay";
+    const [p0, hash] = page.split("#");
+    fr.src = PAGES + p0 + "?t=" + Date.now() + (hash ? "#" + hash : "");
+    wrap.appendChild(fr); frames.push(fr);
+  });
+  bar.appendChild(el("span", "sp"));
+  const lab = el("label"), cb = el("input"); cb.type = "checkbox"; cb.checked = Shell.autostart();
+  cb.onchange = () => Shell.setAutostart(cb.checked);
+  lab.append(cb, document.createTextNode("PC 켤 때 자동 실행"));
+  bar.appendChild(lab);
+  main.append(bar, wrap); root.appendChild(main);
+  const saved = Shell.getTab(), idx = tabs.findIndex(t => t[0] === saved);
+  select(idx >= 0 ? idx : 0);
+  Shell.changes().then(t => { if (t){ $("chgText").textContent = t; $("chg").hidden = false; } });
+}
+$("chgOk").onclick = () => { $("chg").hidden = true; };
+Shell.onOpenTab(k => { const i = tabs.findIndex(t => t[0] === k); if (i >= 0) select(i); });
+App.role() ? showMain() : showLogin();
+</script>
+</body>
+</html>

@@ -4,3 +4,5 @@ local.properties
 *.iml
 .idea/
 app/src/main/assets/
+pc/node_modules/
+pc/dist/

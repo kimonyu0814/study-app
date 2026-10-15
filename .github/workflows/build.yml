@@ -7,6 +7,8 @@ on:
       - "docs/**"
       - "README.md"
       - "RELEASE_NOTES.md"
+      - "pc/**"
+      - ".github/workflows/pc.yml"
   workflow_dispatch:
 
 permissions:

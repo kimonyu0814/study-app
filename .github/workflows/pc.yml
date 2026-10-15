@@ -1,0 +1,54 @@
+name: PC 설치 파일 만들기
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "pc/**"
+      - ".github/workflows/pc.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 준비
+        working-directory: pc
+        run: |
+          npm install --no-audit --no-fund
+          npm pkg set version=1.0.${{ github.run_number }}
+
+      - name: 설치 파일 만들기
+        working-directory: pc
+        run: npx electron-builder --win --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - name: 이전 PC 릴리스 지우기
+        run: gh release delete pc-latest --yes --cleanup-tag
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      # 휴대폰 앱의 '최신 버전'과 섞이지 않게 pc-latest (미리 보기) 로 올림
+      - name: 릴리스로 올리기
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: pc-latest
+          name: 학습기록 PC 1.0.${{ github.run_number }}
+          prerelease: true
+          make_latest: "false"
+          body: 윈도우 PC 에서 StudyApp-Setup.exe 를 내려받아 실행하세요. 이후 업데이트는 자동으로 됩니다.
+          files: |
+            pc/dist/StudyApp-Setup.exe
+            pc/dist/StudyApp-Setup.exe.blockmap
+            pc/dist/latest.yml

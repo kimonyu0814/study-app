@@ -1,0 +1,28 @@
+{
+  "name": "study-app-pc",
+  "productName": "학습기록",
+  "version": "1.0.0",
+  "description": "학습기록 · 가족 앱 (PC)",
+  "author": "kimonyu0814",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --publish never"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.onyu.study.pc",
+    "productName": "학습기록",
+    "files": ["main.js", "preload.js", "logic.js", "shell.html", "build/icon.png", "build/tray.png"],
+    "directories": { "output": "dist", "buildResources": "build" },
+    "win": { "target": "nsis", "icon": "build/icon.png", "artifactName": "StudyApp-Setup.${ext}" },
+    "nsis": { "oneClick": true, "perMachine": false, "createDesktopShortcut": true, "shortcutName": "학습기록" },
+    "publish": [{ "provider": "generic", "url": "https://github.com/kimonyu0814/study-app/releases/download/pc-latest/" }]
+  }
+}
