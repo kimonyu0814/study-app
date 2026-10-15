@@ -197,7 +197,7 @@ let busy = false;
 /* 실패 이유를 알기 쉽게 */
 function why(j){
   const e = j && j.error;
-  if (e === "action" || e === "item" || e === "home") return "Apps Script가 예전 코드입니다. 새 코드로 바꾸고 '새 버전'으로 배포해 주세요.";
+  if (e === "action" || e === "item" || e === "home" || e === "read") return "Apps Script가 예전 코드입니다. 새 코드로 바꾸고 '새 버전'으로 배포해 주세요.";
   if (e === "pw") return "비밀번호가 맞지 않습니다. Apps Script의 EXAM_PASSWORD와 앱 비밀번호가 같은지 확인하세요.";
   if (e === "at") return "보낼 시각을 넣어 주세요.";
   if (e === "who") return "온유(0000)만 할 수 있습니다.";
@@ -647,7 +647,7 @@ async function sendMedia(x, kind, blob, seconds){
 let room = null;
 const ROLES = ["0000", "0001", "0002", "0003"];
 const NAME = r => r === "0000" && ME === "0003" ? "오빠" : (PEOPLE[r] || r);
-function roomMsgs(x){ return data.msgs.filter(m => (m.from === ME && m.to === x) || (m.from === x && m.to === ME)); }
+function roomMsgs(x){ return data.msgs.filter(m => m.kind !== "test" && ((m.from === ME && m.to === x) || (m.from === x && m.to === ME))); }
 function seenMap(){ try { return JSON.parse(localStorage.getItem("chatSeen")) || {}; } catch(e){ return {}; } }
 function unread(x){ const s = seenMap()[x] || ""; return roomMsgs(x).filter(m => m.from === x && m.at > s).length; }
 function totalUnread(){ return ROLES.filter(r => r !== ME).reduce((a, r) => a + unread(r), 0); }
@@ -672,7 +672,7 @@ window.addEventListener("popstate", e => { room = (e.state && e.state.room) || n
 /* ---------- 관리자: 가족 모든 채팅 보기 (온유만, 읽기 전용) ---------- */
 let pair = null;
 const PAIRS = [["0001", "0002"], ["0001", "0003"], ["0002", "0003"], ["0000", "0001"], ["0000", "0002"], ["0000", "0003"]];
-function pairMsgs(p){ const [a, b] = p.split("-"); return data.msgs.filter(m => (m.from === a && m.to === b) || (m.from === b && m.to === a)); }
+function pairMsgs(p){ const [a, b] = p.split("-"); return data.msgs.filter(m => m.kind !== "test" && ((m.from === a && m.to === b) || (m.from === b && m.to === a))); }
 function pairList(){
   const ul = el("ul", "rooms");
   PAIRS.forEach(([a, b]) => {
@@ -841,6 +841,36 @@ const SETTINGS = {
   "0003": [["n_class", "학원 · 활동 30분 전 알림", "예: 30분 뒤 피아노"], ["n_study", "집공부 시작 알림", "그날 할 과목도 알려 줘요"],
            ["n_done", "오후 9시 공부 끝 알림", "월~금"], ["n_msg", "가족 메시지 알림", ""]]
 };
+/* 알림 시험: 받을 사람을 골라 휴대폰 · PC 로 시험 알림 */
+function testCard(){
+  const c = el("section", "card");
+  c.appendChild(el("h2", null, "🔔 알림 시험"));
+  c.appendChild(el("div", "lab", "받을 사람"));
+  const to = new Set([ME]);
+  const ch = el("div", "chips");
+  ["0000", "0001", "0002", "0003"].forEach(r => {
+    const b = el("button", "chip", r === ME ? "나" : (PEOPLE[r] || r)); b.type = "button";
+    const paint = () => b.setAttribute("aria-pressed", to.has(r)); paint();
+    b.onclick = () => { to.has(r) ? to.delete(r) : to.add(r); paint(); };
+    ch.appendChild(b);
+  });
+  c.appendChild(ch);
+  const go = el("button", "btn primary", "시험 알림 보내기"); go.type = "button"; go.style.marginTop = "12px";
+  const msg = el("div", "done");
+  go.onclick = async () => {
+    if (!to.size){ msg.className = "done err"; msg.textContent = "받을 사람을 고르세요."; return; }
+    go.disabled = true; msg.className = "done"; msg.textContent = "보내는 중…";
+    const j = await send({ action: "test", to: [...to] });
+    go.disabled = false;
+    if (j.ok){
+      const names = [...to].map(r => r === ME ? "나" : PEOPLE[r]).join(", ");
+      msg.className = "done"; msg.textContent = `${names}에게 보냈습니다. 휴대폰은 몇 초, PC 는 30초 안에 와요.`;
+    } else { msg.className = "done err"; msg.textContent = why(j); }
+  };
+  c.append(go, msg);
+  c.appendChild(el("p", "muted", "앱이 설치되어 코드를 넣은 기기로만 갑니다. 채팅방에는 남지 않아요."));
+  return c;
+}
 function renderSettings(app){
   app.appendChild(header("설정"));
   const c = el("section", "card");
@@ -858,19 +888,7 @@ function renderSettings(app){
   app.appendChild(c);
   const c2 = el("section", "card");
   c2.appendChild(el("h2", null, App.isPC ? "이 PC" : "이 휴대폰"));
-  /* 알림 시험: PC 는 바로 윈도우 알림 */
-  if (App.isPC && "Notification" in window){
-    const tb = el("button", "btn", "🔔 알림 시험"); tb.type = "button"; tb.style.marginBottom = "12px";
-    const tm = el("div", "done");
-    tb.onclick = () => {
-      try {
-        const n = new Notification("알림 시험", { body: `${PEOPLE[ME] || ""} PC 알림이 잘 옵니다. 트레이에 있어도 이렇게 떠요.` });
-        tm.className = "done"; tm.textContent = "화면 오른쪽 아래에 알림이 떴는지 확인하세요. 안 보이면 윈도우 설정 → 시스템 → 알림을 확인하세요.";
-        n.onclick = () => window.focus();
-      } catch(e){ tm.className = "done err"; tm.textContent = "알림을 띄우지 못했습니다."; }
-    };
-    c2.append(tb, tm);
-  }
+  app.appendChild(testCard());
   c2.appendChild(el("p", "muted", `앱 버전 ${App.version()} · 식별 코드를 잘못 넣었으면 다시 입력할 수 있습니다.`));
   const b = el("button", "btn", "식별 코드 다시 입력"); b.type = "button";
   b.onclick = () => { if (!b.classList.contains("arm")){ b.classList.add("arm"); b.textContent = "한 번 더 누르면 처음 화면으로"; return; } App.resetRole(); };
