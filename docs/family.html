@@ -99,7 +99,10 @@ textarea{width:100%;resize:vertical;min-height:70px}
 .chat .row{display:flex;align-items:flex-end;gap:6px}
 .chat .row.mine{flex-direction:row-reverse}
 .chat .bub{max-width:75%}
-.chat .tm{font-size:.68rem;color:var(--muted);white-space:nowrap}
+.chat .tm{font-size:.68rem;color:var(--muted);white-space:nowrap;display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+.chat .row:not(.mine) .tm{align-items:flex-start}
+.chat .rd{font-weight:800;color:#E2A400;font-size:.72rem}
+.chat .rd.ok{color:var(--muted);font-weight:500}
 .chat .bub .who{display:block;font-size:.7rem;font-weight:700;opacity:.8;margin-bottom:2px}
 .chatin{position:sticky;bottom:0;display:flex;gap:8px;align-items:flex-end;background:var(--paper);padding:10px 0 4px;border-top:1px solid var(--rule)}
 .chatin textarea{flex:1;min-height:42px;max-height:120px;resize:none;border-radius:20px;padding:10px 14px}
@@ -175,7 +178,7 @@ let week = monday(new Date()), editing = false, sync = "load";
 function setSync(s, t){ sync = s; const e = $("sync"); if (!e) return; e.className = "sync " + ({ on: "on", busy: "busy", err: "err", load: "busy" }[s]); e.textContent = t || { on: "동기화됨", busy: "저장 중…", err: "연결 안 됨", load: "불러오는 중…" }[s]; }
 function accept(d){
   if (!d) return;
-  data = Object.assign({ schedule: { fixed: [], weeks: {} }, places: [], days: {}, msgs: [] }, d);
+  data = Object.assign({ schedule: { fixed: [], weeks: {} }, places: [], days: {}, msgs: [], reads: {} }, d);
   data.schedule.fixed = data.schedule.fixed || []; data.schedule.weeks = data.schedule.weeks || {};
   try { localStorage.setItem("familyCache", JSON.stringify(data)); } catch(e){}
 }
@@ -183,8 +186,11 @@ async function pull(){
   try {
     const r = await fetch(API + "?app=family&t=" + Date.now()); const j = await r.json();
     if (!j || !j.family){ setSync("err", "Apps Script 업데이트 필요"); return; }
-    if (busy || window.__rec || document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+    /* 입력 중이면 화면을 다시 그리지 않음 (단, 채팅 입력창이 비어 있으면 새 메시지 · 읽음 표시를 위해 다시 그림) */
+    const ae = document.activeElement, chatIn = !!(ae && ae.closest && ae.closest(".chatin") && !ae.value);
+    if (busy || window.__rec || (ae && /INPUT|TEXTAREA|SELECT/.test(ae.tagName) && !chatIn)) return;
     accept(j.data); setSync("on"); render();
+    if (chatIn){ const t = document.querySelector(".chatin textarea"); if (t) t.focus(); }
   } catch(e){ setSync("err"); }
 }
 let busy = false;
@@ -649,7 +655,17 @@ function markSeen(x){
   const ms = roomMsgs(x); if (!ms.length) return;
   const m = seenMap(); m[x] = ms[ms.length - 1].at;
   try { localStorage.setItem("chatSeen", JSON.stringify(m)); } catch(e){}
+  /* 상대에게 '읽음' 알리기 (받은 메시지가 새로 있을 때만) */
+  const lastIn = ms.filter(q => q.from === x).pop();
+  const key = ME + ">" + x;
+  if (lastIn && lastIn.at > ((data.reads || {})[key] || "")){
+    data.reads = data.reads || {}; data.reads[key] = lastIn.at;
+    fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ app: "family", action: "read", from: ME, pw: IS_ME ? PW() : "", with: x, at: lastIn.at }) }).catch(() => {});
+  }
 }
+/* 내가 보낸 메시지를 상대가 읽었는지 */
+function readBy(x, m){ return ((data.reads || {})[x + ">" + ME] || "") >= m.at; }
 function avatar(r){ const a = el("span", "av", NAME(r).slice(0, 1)); a.style.setProperty("--c", PCOL[r] || "var(--accent)"); return a; }
 function openRoom(x){ room = x; try { history.pushState({ room: x }, ""); } catch(e){} render(); }
 window.addEventListener("popstate", e => { room = (e.state && e.state.room) || null; pair = (e.state && e.state.pair) || null; render(); });
@@ -737,6 +753,11 @@ function chatView(app, x){
     if (m.pending) b.style.opacity = ".6";
     const tm = el("span", "tm", m.pending ? "보내는 중" : m.failed ? "전송 실패" : T(`${pad2(d.getHours())}:${pad2(d.getMinutes())}`));
     if (m.failed) tm.style.color = "var(--bad)";
+    /* 카톡처럼: 안 읽었으면 노란 1, 읽었으면 '읽음' */
+    if (m.from === ME && !m.pending && !m.failed){
+      const r = readBy(x, m);
+      tm.prepend(el("span", r ? "rd ok" : "rd", r ? "읽음" : "1"));
+    }
     row.append(b, tm);
     box.appendChild(row);
   });
@@ -745,6 +766,8 @@ function chatView(app, x){
   const bar = el("div", "chatin");
   const ta = el("textarea"); ta.rows = 1; ta.placeholder = "메시지"; ta.setAttribute("aria-label", `${NAME(x)}에게 보낼 메시지`);
   ta.oninput = () => { ta.style.height = "auto"; ta.style.height = Math.min(120, ta.scrollHeight) + "px"; };
+  /* Enter 로 보내기, Shift+Enter 는 줄바꿈 (한글 입력 중엔 무시) */
+  ta.onkeydown = e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing && e.keyCode !== 229){ e.preventDefault(); go.click(); } };
   const go = el("button", "btn primary", "보내기"); go.type = "button";
   go.onclick = async () => {
     const t = ta.value.trim(); if (!t){ ta.focus(); return; }
