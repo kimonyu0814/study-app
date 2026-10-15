@@ -888,7 +888,7 @@ function renderSettings(app){
   app.appendChild(c);
   const c2 = el("section", "card");
   c2.appendChild(el("h2", null, App.isPC ? "이 PC" : "이 휴대폰"));
-  app.appendChild(testCard());
+  if (ME === "0000") app.appendChild(testCard());
   c2.appendChild(el("p", "muted", `앱 버전 ${App.version()} · 식별 코드를 잘못 넣었으면 다시 입력할 수 있습니다.`));
   const b = el("button", "btn", "식별 코드 다시 입력"); b.type = "button";
   b.onclick = () => { if (!b.classList.contains("arm")){ b.classList.add("arm"); b.textContent = "한 번 더 누르면 처음 화면으로"; return; } App.resetRole(); };
