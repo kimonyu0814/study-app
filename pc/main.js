@@ -35,9 +35,17 @@ function createWindow(hidden) {
     autoHideMenuBar: true,
     webPreferences: { preload: path.join(__dirname, "preload.js"), nodeIntegrationInSubFrames: true, contextIsolation: true, sandbox: false }
   });
-  win.loadFile(path.join(__dirname, "shell.html"));
+  loadShell();
   win.on("close", e => { if (!quitting) { e.preventDefault(); win.hide(); } });   // 닫으면 트레이로
   win.webContents.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: "deny" }; });
+}
+/* 바깥 틀도 인터넷에서 받아 옴 (고쳐도 다시 설치할 필요 없게). 안 되면 앱 안의 사본 */
+function loadShell() {
+  if (!win) return;
+  let fellBack = false;
+  const fallback = () => { if (fellBack) return; fellBack = true; win.loadFile(path.join(__dirname, "shell.html")); };
+  win.webContents.once("did-fail-load", (e, code, desc, url, isMain) => { if (isMain !== false) fallback(); });
+  win.loadURL(PAGES + "pc.html?t=" + Date.now()).catch(fallback);
 }
 function showWin(tab) {
   if (!win) return;
@@ -68,7 +76,7 @@ ipcMain.on("tab", (e, k) => { cfg.tab = k; save(); });
 ipcMain.on("getTab", e => { e.returnValue = cfg.tab || ""; });
 ipcMain.on("reset", () => {
   cfg.role = ""; cfg.pw = ""; cfg.seenAt = ""; save();
-  if (win) win.loadFile(path.join(__dirname, "shell.html"));
+  loadShell();
 });
 ipcMain.handle("login", async (e, role, pw) => {
   if (!PEOPLE[role]) return { ok: false, error: "code" };
