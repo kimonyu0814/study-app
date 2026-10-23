@@ -129,14 +129,14 @@ async function pollFamily() {
     const j = await getJSON(API + "?app=family&t=" + Date.now());
     if (!j || !j.data) return;
     family = j.data;
-    const mine = (family.msgs || []).filter(m => m.to === cfg.role && m.at > (cfg.seenAt || ""));
+    const mine = (family.msgs || []).filter(m => (m.to === cfg.role || (m.to === "fam" && m.from !== cfg.role)) && m.at > (cfg.seenAt || ""));
     if (!cfg.seenAt) { cfg.seenAt = new Date().toISOString(); save(); return; }   // 처음엔 지난 메시지로 알림 안 함
     if (!mine.length) return;
     cfg.seenAt = mine[mine.length - 1].at; save();
     mine.slice(-5).forEach(m => {
       const kind = m.kind || "msg", key = "n_" + kind;
       if (!on((PREFS[cfg.role] || []).includes(key) ? key : "n_msg")) return;
-      notify(`${PEOPLE[m.from] || m.from}의 메시지`, m.text, cfg.role === "0000" ? "admin" : "msg");
+      notify(m.to === "fam" ? `가족방 · ${PEOPLE[m.from] || m.from}` : `${PEOPLE[m.from] || m.from}의 메시지`, m.text, cfg.role === "0000" ? "admin" : "msg");
     });
   } catch (e) {}
 }

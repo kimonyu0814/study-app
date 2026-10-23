@@ -148,7 +148,7 @@ textarea{width:100%;resize:vertical;min-height:70px}
 <script>
 const API = "https://script.google.com/macros/s/AKfycbzwUGDOfoBCJbPQx96HCMN8vin0OPCcREB-kYGv-yiDVGkHIOlapcL85oasQRA71NdX/exec";
 const PEOPLE = { "0000": "온유", "0001": "엄마", "0002": "아빠", "0003": "태은" };
-const PCOL = { "0000": "var(--me)", "0001": "var(--mom)", "0002": "var(--dad)", "0003": "var(--week)" };
+const PCOL = { "fam": "var(--accent)", "0000": "var(--me)", "0001": "var(--mom)", "0002": "var(--dad)", "0003": "var(--week)" };
 const WD = ["월", "화", "수", "목", "금", "토", "일"];
 const Q = new URLSearchParams(location.search + "&" + location.hash.slice(1));
 const TAB = Q.get("tab") || "schedule";
@@ -196,7 +196,7 @@ let busy = false;
 /* 실패 이유를 알기 쉽게 */
 function why(j){
   const e = j && j.error;
-  if (e === "action" || e === "item" || e === "home" || e === "read" || e === "pantry") return "Apps Script가 예전 코드입니다. 새 코드로 바꾸고 '새 버전'으로 배포해 주세요.";
+  if (e === "action" || e === "item" || e === "home" || e === "read" || e === "pantry" || e === "schedTae") return "Apps Script가 예전 코드입니다. 새 코드로 바꾸고 '새 버전'으로 배포해 주세요.";
   if (e === "pw") return "비밀번호가 맞지 않습니다. Apps Script의 EXAM_PASSWORD와 앱 비밀번호가 같은지 확인하세요.";
   if (e === "at") return "보낼 시각을 넣어 주세요.";
   if (e === "who") return "온유(0000)만 할 수 있습니다.";
@@ -272,10 +272,17 @@ function eventsOn(wk, di, sch){
   w.add.filter(e => +e.d === di).forEach(e => out.push({ e, fixed: false, skip: false }));
   return out.sort((a, b) => (a.e.s || "99") < (b.e.s || "99") ? -1 : 1);
 }
-async function saveSchedule(){ await send({ action: "schedule", schedule: data.schedule, places: data.places }); render(); }
+/* 고칠 수 있는 사람: 온유는 모두, 태은이는 자기 시간표만 */
+const CAN_EDIT = () => IS_ME || (ME === "0003" && who === "taeeun");
+async function saveSchedule(){
+  if (who === "taeeun") await send({ action: "schedTae", taeeun: SCH(true) });
+  else await send({ action: "schedule", schedule: data.schedule, places: data.places });
+  render();
+}
 function renderSchedule(app){
   let tools = null;
-  if (IS_ME){
+  if (!CAN_EDIT()) editing = false;
+  if (CAN_EDIT()){
     tools = el("button", "btn sm" + (editing ? " primary" : ""), editing ? "편집 끝" : "편집");
     tools.type = "button"; tools.onclick = () => { editing = !editing; render(); };
   }
@@ -318,9 +325,10 @@ function renderSchedule(app){
     }
     app.appendChild(box);
   }
-  if (IS_ME && editing) app.appendChild(addForm());
+  if (CAN_EDIT() && editing) app.appendChild(addForm());
   if (ME === "0003" && !window.__scrolled){ window.__scrolled = true; setTimeout(() => { const t = document.querySelector(".day.today"); if (t) t.scrollIntoView({ block: "start" }); }, 0); }
-  if (!IS_ME) app.appendChild(el("p", "muted", "일정은 온유가 정리합니다. '매주'는 매주 반복, '이번 주'는 그 주에만 있는 일정입니다."));
+  if (ME === "0003" && who === "taeeun") app.appendChild(el("p", "muted", "오른쪽 위 '편집'을 누르면 내 시간표를 고칠 수 있어요."));
+  else if (!IS_ME) app.appendChild(el("p", "muted", "일정은 온유가 정리합니다. '매주'는 매주 반복, '이번 주'는 그 주에만 있는 일정입니다."));
   else if (who === "taeeun") app.appendChild(el("p", "muted", "태은이 시간표입니다. 매일 오후 9시까지 공부, 주말은 비워 두었습니다."));
 }
 function evRow(x, di){
@@ -331,7 +339,7 @@ function evRow(x, di){
   tt.appendChild(el("span", "tag " + (x.fixed ? "f" : "w"), x.skip ? "이번 주 쉼" : x.fixed ? "매주" : "이번 주"));
   r.appendChild(tt);
   const right = el("span", "acts");
-  if (IS_ME && editing){
+  if (CAN_EDIT() && editing){
     if (x.fixed){
       const sk = el("button", null, x.skip ? "되살리기" : "이번 주 빼기"); sk.type = "button";
       sk.onclick = () => {
@@ -682,17 +690,22 @@ async function sendMedia(x, kind, blob, seconds){
 /* ---------- 채팅 (사람별 방) ---------- */
 let room = null;
 const ROLES = ["0000", "0001", "0002", "0003"];
-const NAME = r => r === "0000" && ME === "0003" ? "오빠" : (PEOPLE[r] || r);
-function roomMsgs(x){ return data.msgs.filter(m => m.kind !== "test" && ((m.from === ME && m.to === x) || (m.from === x && m.to === ME))); }
+const NAME = r => r === "fam" ? "가족방" : r === "0000" && ME === "0003" ? "오빠" : (PEOPLE[r] || r);
+const ROOMS = () => ["fam"].concat(ROLES.filter(r => r !== ME));
+const inFrom = (x, m) => x === "fam" ? m.from !== ME : m.from === x;   // 내가 받은 메시지인지
+function roomMsgs(x){
+  if (x === "fam") return data.msgs.filter(m => m.to === "fam");
+  return data.msgs.filter(m => m.kind !== "test" && ((m.from === ME && m.to === x) || (m.from === x && m.to === ME)));
+}
 function seenMap(){ try { return JSON.parse(localStorage.getItem("chatSeen")) || {}; } catch(e){ return {}; } }
-function unread(x){ const s = seenMap()[x] || ""; return roomMsgs(x).filter(m => m.from === x && m.at > s).length; }
-function totalUnread(){ return ROLES.filter(r => r !== ME).reduce((a, r) => a + unread(r), 0); }
+function unread(x){ const s = seenMap()[x] || ""; return roomMsgs(x).filter(m => inFrom(x, m) && m.at > s).length; }
+function totalUnread(){ return ROOMS().reduce((a, r) => a + unread(r), 0); }
 function markSeen(x){
   const ms = roomMsgs(x); if (!ms.length) return;
   const m = seenMap(); m[x] = ms[ms.length - 1].at;
   try { localStorage.setItem("chatSeen", JSON.stringify(m)); } catch(e){}
   /* 상대에게 '읽음' 알리기 (받은 메시지가 새로 있을 때만) */
-  const lastIn = ms.filter(q => q.from === x).pop();
+  const lastIn = ms.filter(q => inFrom(x, q)).pop();
   const key = ME + ">" + x;
   if (lastIn && lastIn.at > ((data.reads || {})[key] || "")){
     data.reads = data.reads || {}; data.reads[key] = lastIn.at;
@@ -702,6 +715,8 @@ function markSeen(x){
 }
 /* 내가 보낸 메시지를 상대가 읽었는지 */
 function readBy(x, m){ return ((data.reads || {})[x + ">" + ME] || "") >= m.at; }
+/* 가족방: 아직 안 읽은 사람 수 (카톡처럼) */
+function famLeft(m){ const r = data.reads || {}; return ROLES.filter(p => p !== m.from && !((r[p + ">fam"] || "") >= m.at)).length; }
 function avatar(r){ const a = el("span", "av", NAME(r).slice(0, 1)); a.style.setProperty("--c", PCOL[r] || "var(--accent)"); return a; }
 function openRoom(x){ room = x; try { history.pushState({ room: x }, ""); } catch(e){} render(); }
 window.addEventListener("popstate", e => { room = (e.state && e.state.room) || null; pair = (e.state && e.state.pair) || null; render(); });
@@ -757,10 +772,10 @@ function pairView(app, p){
 }
 function roomList(){
   const ul = el("ul", "rooms");
-  ROLES.filter(r => r !== ME).forEach(r => {
+  ROOMS().forEach(r => {
     const ms = roomMsgs(r), last = ms[ms.length - 1], u = unread(r);
     const li = el("li"), b = el("button", "room"); b.type = "button";
-    const mid = el("span"); mid.append(el("span", "nm", NAME(r)), el("span", "pv", last ? (last.from === ME ? "나: " : "") + last.text : "대화를 시작해 보세요"));
+    const mid = el("span"); mid.append(el("span", "nm", NAME(r)), el("span", "pv", last ? (last.from === ME ? "나: " : r === "fam" ? NAME(last.from) + ": " : "") + last.text : r === "fam" ? "온유 · 엄마 · 아빠 · 태은" : "대화를 시작해 보세요"));
     const rt = el("span", "rt"); rt.appendChild(el("span", null, last ? when(last.at) : ""));
     if (u) rt.appendChild(el("span", "badge", String(u)));
     b.append(avatar(r), mid, rt);
@@ -785,14 +800,15 @@ function chatView(app, x){
     if (k !== lastDay){ lastDay = k; box.appendChild(el("span", "dsep", k === today() ? "오늘" : `${d.getMonth() + 1}월 ${d.getDate()}일 (${WD[wdIdx(d)]})`)); }
     const row = el("div", "row" + (m.from === ME ? " mine" : ""));
     const b = el("div", "bub" + (m.from === ME ? " mine" : ""));
+    if (x === "fam" && m.from !== ME) b.appendChild(el("span", "who", NAME(m.from)));
     msgBody(b, m);
     if (m.pending) b.style.opacity = ".6";
     const tm = el("span", "tm", m.pending ? "보내는 중" : m.failed ? "전송 실패" : T(`${pad2(d.getHours())}:${pad2(d.getMinutes())}`));
     if (m.failed) tm.style.color = "var(--bad)";
     /* 카톡처럼: 안 읽었으면 노란 1, 읽었으면 '읽음' */
     if (m.from === ME && !m.pending && !m.failed){
-      const r = readBy(x, m);
-      tm.prepend(el("span", r ? "rd ok" : "rd", r ? "읽음" : "1"));
+      if (x === "fam"){ const n = famLeft(m); tm.prepend(el("span", n ? "rd" : "rd ok", n ? String(n) : "모두 읽음")); }
+      else { const r = readBy(x, m); tm.prepend(el("span", r ? "rd ok" : "rd", r ? "읽음" : "1")); }
     }
     row.append(b, tm);
     box.appendChild(row);
