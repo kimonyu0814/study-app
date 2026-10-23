@@ -186,11 +186,10 @@ async function pull(){
   try {
     const r = await fetch(API + "?app=family&t=" + Date.now()); const j = await r.json();
     if (!j || !j.family){ setSync("err", "Apps Script 업데이트 필요"); return; }
-    /* 입력 중이면 화면을 다시 그리지 않음 (단, 채팅 입력창이 비어 있으면 새 메시지 · 읽음 표시를 위해 다시 그림) */
-    const ae = document.activeElement, chatIn = !!(ae && ae.closest && ae.closest(".chatin") && !ae.value);
-    if (busy || window.__rec || (ae && /INPUT|TEXTAREA|SELECT/.test(ae.tagName) && !chatIn)) return;
+    /* 입력 중이면 화면을 다시 그리지 않음 (채팅 입력창은 쓰던 글을 지키면서 다시 그림) */
+    const ae = document.activeElement, chatIn = !!(ae && ae.closest && ae.closest(".chatin") && ae.tagName === "TEXTAREA");
+    if (busy || window.__rec || window.__composing || (ae && /INPUT|TEXTAREA|SELECT/.test(ae.tagName) && !chatIn)) return;
     accept(j.data); setSync("on"); render();
-    if (chatIn){ const t = document.querySelector(".chatin textarea"); if (t) t.focus(); }
   } catch(e){ setSync("err"); }
 }
 let busy = false;
@@ -227,10 +226,15 @@ function header(title, sub){
   if (sub) t.appendChild(sub);
   return t;
 }
+/* 채팅방마다 쓰던 글 보관 (화면을 다시 그려도 안 지워지게) */
+const drafts = {};
 function render(){
+  const ae = document.activeElement, inChat = !!(ae && ae.closest && ae.closest(".chatin") && ae.tagName === "TEXTAREA");
+  const sel = inChat ? [ae.selectionStart, ae.selectionEnd] : null;
   const app = $("app"); app.innerHTML = "";
   ({ schedule: renderSchedule, admin: renderAdmin, msg: renderMsg, settings: renderSettings }[TAB] || renderSchedule)(app);
   setSync(sync);
+  if (inChat){ const t = document.querySelector(".chatin textarea"); if (t){ t.focus(); try { t.setSelectionRange(Math.min(sel[0], t.value.length), Math.min(sel[1], t.value.length)); } catch(e){} } }
 }
 
 /* ---------- 주간 스케줄 (온유 · 태은) ---------- */
@@ -797,7 +801,13 @@ function chatView(app, x){
   markSeen(x);
   const bar = el("div", "chatin");
   const ta = el("textarea"); ta.rows = 1; ta.placeholder = "메시지"; ta.setAttribute("aria-label", `${NAME(x)}에게 보낼 메시지`);
-  ta.oninput = () => { ta.style.height = "auto"; ta.style.height = Math.min(120, ta.scrollHeight) + "px"; };
+  const grow = () => { ta.style.height = "auto"; ta.style.height = Math.min(120, ta.scrollHeight) + "px"; };
+  ta.value = drafts[x] || "";
+  ta.oninput = () => { drafts[x] = ta.value; grow(); };
+  if (ta.value) setTimeout(grow, 0);
+  /* 한글 조합 중에는 다시 그리지 않음 (글자가 깨지지 않게) */
+  ta.addEventListener("compositionstart", () => { window.__composing = true; });
+  ta.addEventListener("compositionend", () => { window.__composing = false; drafts[x] = ta.value; if (window.__needRender){ window.__needRender = false; setTimeout(render, 0); } });
   /* Enter 로 보내기, Shift+Enter 는 줄바꿈 (한글 입력 중엔 무시) */
   ta.onkeydown = e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing && e.keyCode !== 229){ e.preventDefault(); go.click(); } };
   const go = el("button", "btn primary", "보내기"); go.type = "button";
@@ -805,10 +815,10 @@ function chatView(app, x){
     const t = ta.value.trim(); if (!t){ ta.focus(); return; }
     /* 누르자마자 말풍선을 띄우고, 서버 저장은 뒤에서 */
     const temp = { from: ME, to: x, text: t, at: new Date().toISOString(), pending: true };
-    data.msgs.push(temp); ta.value = ""; render();
+    data.msgs.push(temp); ta.value = ""; drafts[x] = ""; render();
     const j = await send({ action: "msg", to: [x], text: t });
     if (!j.ok){ temp.pending = false; temp.failed = true; if (!data.msgs.includes(temp)) data.msgs.push(temp); }
-    render();
+    if (window.__composing) window.__needRender = true; else render();
   };
   /* 📷 사진 */
   const fileIn = el("input"); fileIn.type = "file"; fileIn.accept = "image/*"; fileIn.hidden = true;
