@@ -66,6 +66,15 @@ class MainActivity : Activity() {
             Tab("settings", "설정", "family.html#tab=settings")
         )
     )
+    companion object {
+        /** 지금 화면에 떠 있는 앱 (푸시가 오면 바로 새로고침) */
+        @Volatile var live: MainActivity? = null
+    }
+    /** 다른 사람이 보낸 내용 바로 불러오기 */
+    fun refreshNow() {
+        runOnUiThread { webs.forEach { w -> w.evaluateJavascript("try{pull()}catch(e){}", null) } }
+    }
+
     private var tabs: List<Tab> = emptyList()
     private val webs = ArrayList<WebView>()
     private val buttons = ArrayList<TextView>()
@@ -378,6 +387,7 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        live = this
         if (Me.role(this) == "0003") AlarmReceiver.scheduleAll(this)   // 시간표가 바뀌었을 수 있음
         webs.forEach { w ->
             w.onResume()
@@ -388,6 +398,7 @@ class MainActivity : Activity() {
 
     override fun onPause() {
         super.onPause()
+        if (live === this) live = null
         if (Me.role(this) == "0000") TodayWidget.refresh(this)
     }
 

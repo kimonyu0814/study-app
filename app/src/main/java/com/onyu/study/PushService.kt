@@ -8,6 +8,7 @@ class PushService : FirebaseMessagingService() {
 
     override fun onMessageReceived(msg: RemoteMessage) {
         val d = msg.data
+        MainActivity.live?.refreshNow()      // 앱이 켜져 있으면 화면도 바로 새로
         val title = d["title"] ?: msg.notification?.title ?: return
         val body = d["body"] ?: msg.notification?.body ?: ""
         // 알림 종류별로 켜고 끔 (밥 · 데리러 · 귀가 · 메시지)

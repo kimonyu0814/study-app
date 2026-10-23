@@ -957,7 +957,9 @@ function renderSettings(app){
 if (KID) document.documentElement.style.setProperty("--tmw", "128px");
 render();
 pull();
-setInterval(() => { if (document.visibilityState === "visible") pull(); }, 15000);
+/* 채팅방을 열어 두면 4초마다, 아니면 15초마다 새로 */
+let tickN = 0;
+setInterval(() => { tickN++; if (document.visibilityState === "visible" && (room || pair || TAB === "msg" || tickN % 4 === 0)) pull(); }, 4000);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") pull(); });
 </script>
 </body>

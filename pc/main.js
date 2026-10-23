@@ -120,6 +120,10 @@ function notify(title, body, tab) {
   n.on("click", () => showWin(tab));
   n.show();
 }
+/* 화면 안 페이지들 바로 새로고침 */
+function refreshFrames() {
+  try { win.webContents.mainFrame.framesInSubtree.forEach(f => { f.executeJavaScript("try{pull()}catch(e){}").catch(() => {}); }); } catch (e) {}
+}
 async function getJSON(url) { const r = await fetch(url); return r.json(); }
 
 let family = null;
@@ -133,6 +137,7 @@ async function pollFamily() {
     if (!cfg.seenAt) { cfg.seenAt = new Date().toISOString(); save(); return; }   // 처음엔 지난 메시지로 알림 안 함
     if (!mine.length) return;
     cfg.seenAt = mine[mine.length - 1].at; save();
+    refreshFrames();
     mine.slice(-5).forEach(m => {
       const kind = m.kind || "msg", key = "n_" + kind;
       if (!on((PREFS[cfg.role] || []).includes(key) ? key : "n_msg")) return;
@@ -181,7 +186,7 @@ app.whenReady().then(() => {
     cfg.autostartSet = true; save();
   }
   pollFamily(); tick();
-  setInterval(pollFamily, 30000);
+  setInterval(pollFamily, 15000);
   setInterval(tick, 30000);
   // 자동 업데이트 (GitHub 의 새 설치 파일)
   if (app.isPackaged) {
