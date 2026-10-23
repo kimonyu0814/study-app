@@ -197,10 +197,11 @@ let busy = false;
 /* 실패 이유를 알기 쉽게 */
 function why(j){
   const e = j && j.error;
-  if (e === "action" || e === "item" || e === "home" || e === "read") return "Apps Script가 예전 코드입니다. 새 코드로 바꾸고 '새 버전'으로 배포해 주세요.";
+  if (e === "action" || e === "item" || e === "home" || e === "read" || e === "pantry") return "Apps Script가 예전 코드입니다. 새 코드로 바꾸고 '새 버전'으로 배포해 주세요.";
   if (e === "pw") return "비밀번호가 맞지 않습니다. Apps Script의 EXAM_PASSWORD와 앱 비밀번호가 같은지 확인하세요.";
   if (e === "at") return "보낼 시각을 넣어 주세요.";
   if (e === "who") return "온유(0000)만 할 수 있습니다.";
+  if (e === "mom") return "엄마(0001)만 할 수 있습니다.";
   if (!j || !Object.keys(j).length) return "인터넷 연결 또는 Apps Script 배포를 확인하세요.";
   return "저장하지 못했습니다 (" + e + ").";
 }
@@ -275,6 +276,7 @@ function renderSchedule(app){
     tools.type = "button"; tools.onclick = () => { editing = !editing; render(); };
   }
   app.appendChild(header("주간 스케줄", tools));
+  if (ME === "0001") app.appendChild(pantryCard());
   const ps = el("div", "chips"); ps.style.marginBottom = "10px";
   PERSONS.forEach(([k, n]) => {
     const b = el("button", "chip", n); b.type = "button"; b.setAttribute("aria-pressed", who === k);
@@ -302,9 +304,10 @@ function renderSchedule(app){
     if (!list.length) box.appendChild(el("div", "none", "일정 없음"));
     list.forEach(x => box.appendChild(evRow(x, i)));
     const a = who === "onyu" ? dayOf(k) : {};
-    if (a.dinner || a.pickup || a.home){
+    if (a.dinner || a.pickup || a.home || a.pantry){
       const inf = el("div", "info");
-      if (a.dinner && (IS_ME || a.dinner.sent)){ const x = el("span"); x.append("🍚 밥 ", el("b", null, a.dinner.v === "yes" ? "먹음" : a.dinner.v === "no" ? "안 먹음" : a.dinner.v)); inf.appendChild(x); }
+      if (a.dinner && (IS_ME || a.dinner.sent)){ const x = el("span"); x.append("🍚 밥 ", el("b", null, (a.dinner.v === "yes" ? "먹음" : a.dinner.v === "no" ? "안 먹음" : a.dinner.v) + (a.dinner.menu && a.dinner.v !== "no" ? ` · ${a.dinner.menu}` : ""))); inf.appendChild(x); }
+      if (a.pantry && a.pantry.text){ const x = el("span"); x.append("🧺 집에 ", el("b", null, a.pantry.text)); inf.appendChild(x); }
       if (a.pickup && (IS_ME || a.pickup.sent)){ const x = el("span"); x.append("🚗 데리러 ", el("b", null, a.pickup.v)); inf.appendChild(x); }
       if (a.home){ const x = el("span"); x.append("🏠 귀가 ", el("b", null, [a.home.depart && hm(a.home.depart) + " 출발", a.home.arrive && hm(a.home.arrive) + " 도착"].filter(Boolean).join(" → "))); inf.appendChild(x); }
       if (inf.children.length) box.appendChild(inf);
@@ -407,6 +410,27 @@ function renderAdmin(app){
   app.appendChild(homeCard());
   app.appendChild(placesCard());
 }
+/* 엄마 → 온유: 오늘 집에 있는 것 */
+function pantryCard(){
+  const k = today(), cur = dayOf(k).pantry, din = dayOf(k).dinner;
+  const c = el("section", "card");
+  const h = el("h2", null, "🧺 집에 있는 것 → 온유"); h.appendChild(el("span", "meta", "누르면 바로 감")); c.appendChild(h);
+  if (din && din.sent){ const n = el("div", "info"); n.style.marginBottom = "8px"; n.append("🍚 온유: ", el("b", null, (din.v === "yes" ? "집에서 먹어요" : din.v === "no" ? "안 먹어요" : din.v) + (din.menu && din.v !== "no" ? ` · 먹고 싶은 것: ${din.menu}` : ""))); c.appendChild(n); }
+  const t = el("textarea"); t.rows = 2; t.maxLength = 200; t.placeholder = "예: 김치찌개, 계란, 냉동만두"; t.setAttribute("aria-label", "집에 있는 음식");
+  t.style.width = "100%"; t.value = (cur && cur.text) || ""; c.appendChild(t);
+  const go = el("button", "btn primary", "온유에게 보내기"); go.type = "button"; go.style.marginTop = "10px";
+  const msg = el("div", "done", cur && cur.at ? `보냄 · ${when(cur.at)}` : "");
+  go.onclick = async () => {
+    const v = t.value.trim();
+    if (!v){ msg.className = "done err"; msg.textContent = "집에 있는 것을 적어 주세요."; t.focus(); return; }
+    go.disabled = true;
+    const j = await send({ action: "pantry", date: k, text: v });
+    go.disabled = false;
+    if (j.ok) render(); else { msg.className = "done err"; msg.textContent = why(j); }
+  };
+  c.append(go, msg);
+  return c;
+}
 /* 오늘 하루 정보 (예전 형식도 읽기) */
 function dayOf(k){
   const x = Object.assign({}, data.days[k] || {});
@@ -449,6 +473,14 @@ function itemCard(kind){
     other.oninput = () => { v = other.value.trim(); paint(); };
     c.appendChild(other);
   }
+  let menu = null;
+  if (kind === "dinner"){
+    const pt = dayOf(k).pantry;
+    if (pt && pt.text){ const n = el("div", "info"); n.style.marginBottom = "8px"; n.append("🧺 엄마: 집에 ", el("b", null, pt.text), ` 있어요 · ${when(pt.at)}`); c.insertBefore(n, ch); }
+    menu = el("input"); menu.type = "text"; menu.maxLength = 60; menu.placeholder = "먹고 싶은 메뉴 (안 써도 됨)"; menu.setAttribute("aria-label", "먹고 싶은 저녁 메뉴");
+    menu.style.marginTop = "8px"; menu.style.width = "100%"; menu.value = (cur && cur.menu) || "";
+    c.appendChild(menu);
+  }
   paint();
   let at = null;
   if (weekend){
@@ -458,12 +490,12 @@ function itemCard(kind){
     r.appendChild(at); c.appendChild(r);
   }
   const go = el("button", "btn primary", weekend ? "예약하기" : "저장"); go.type = "button"; go.style.marginTop = "12px";
-  const msg = el("div", "done", cur ? `${kind === "dinner" ? (cur.v === "yes" ? "먹어요" : cur.v === "no" ? "안 먹어요" : cur.v) : cur.v} · ${itemStatus(cur)}` : "");
+  const msg = el("div", "done", cur ? `${kind === "dinner" ? (cur.v === "yes" ? "먹어요" : cur.v === "no" ? "안 먹어요" : cur.v) + (cur.menu && cur.v !== "no" ? ` (${cur.menu})` : "") : cur.v} · ${itemStatus(cur)}` : "");
   go.onclick = async () => {
     if (!v){ msg.className = "done err"; msg.textContent = kind === "dinner" ? "먹는지 골라 주세요." : "데리러 올 곳을 골라 주세요."; return; }
     if (weekend && !at.value){ msg.className = "done err"; msg.textContent = "보낼 시각을 넣어 주세요."; at.focus(); return; }
     go.disabled = true;
-    const j = await send({ action: "item", date: k, kind, v, at: weekend ? at.value : "" });
+    const j = await send({ action: "item", date: k, kind, v, at: weekend ? at.value : "", menu: menu ? menu.value.trim() : "" });
     go.disabled = false;
     if (j.ok) render();
     else { msg.className = "done err"; msg.textContent = why(j); }
