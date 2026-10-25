@@ -703,8 +703,8 @@ const NAME = r => r === "fam" ? "가족방" : r === "0000" && ME === "0003" ? "�
 const ROOMS = () => ["fam"].concat(ROLES.filter(r => r !== ME));
 const inFrom = (x, m) => x === "fam" ? m.from !== ME : m.from === x;   // 내가 받은 메시지인지
 function roomMsgs(x){
-  if (x === "fam") return data.msgs.filter(m => m.to === "fam");
-  return data.msgs.filter(m => m.kind !== "test" && ((m.from === ME && m.to === x) || (m.from === x && m.to === ME)));
+  if (x === "fam") return data.msgs.filter(m => m.to === "fam" && !m.del);
+  return data.msgs.filter(m => m.kind !== "test" && !m.del && ((m.from === ME && m.to === x) || (m.from === x && m.to === ME)));
 }
 function seenMap(){ try { return JSON.parse(localStorage.getItem("chatSeen")) || {}; } catch(e){ return {}; } }
 function unread(x){ const s = seenMap()[x] || ""; return roomMsgs(x).filter(m => inFrom(x, m) && m.at > s).length; }
@@ -732,7 +732,7 @@ window.addEventListener("popstate", e => { room = (e.state && e.state.room) || n
 /* ---------- 관리자: 가족 모든 채팅 보기 (온유만, 읽기 전용) ---------- */
 let pair = null;
 const PAIRS = [["0001", "0002"], ["0001", "0003"], ["0002", "0003"], ["0000", "0001"], ["0000", "0002"], ["0000", "0003"]];
-function pairMsgs(p){ const [a, b] = p.split("-"); return data.msgs.filter(m => m.kind !== "test" && ((m.from === a && m.to === b) || (m.from === b && m.to === a))); }
+function pairMsgs(p){ const [a, b] = p.split("-"); return data.msgs.filter(m => m.kind !== "test" && !m.del && ((m.from === a && m.to === b) || (m.from === b && m.to === a))); }
 function pairList(){
   const ul = el("ul", "rooms");
   PAIRS.forEach(([a, b]) => {
@@ -812,7 +812,7 @@ function chatView(app, x){
     if (x === "fam" && m.from !== ME) b.appendChild(el("span", "who", NAME(m.from)));
     msgBody(b, m);
     if (m.pending) b.style.opacity = ".6";
-    const tm = el("span", "tm", m.pending ? "보내는 중" : m.failed ? "전송 실패" : (m.edited && !m.del ? "수정됨 · " : "") + T(`${pad2(d.getHours())}:${pad2(d.getMinutes())}`));
+    const tm = el("span", "tm", m.pending ? "보내는 중" : m.failed ? "전송 실패" : T(`${pad2(d.getHours())}:${pad2(d.getMinutes())}`));
     if (m.from === ME && m.id && !m.pending && !m.failed && !m.del) holdMenu(b, m, x);
     if (m.failed) tm.style.color = "var(--bad)";
     /* 카톡처럼: 안 읽었으면 노란 1, 읽었으면 '읽음' */
@@ -933,10 +933,9 @@ function msgSheet(m, x){
   del.onclick = async () => {
     if (!del.classList.contains("arm")){ del.classList.add("arm"); del.textContent = "한 번 더 누르면 삭제 (모두에게서 지워져요)"; return; }
     close();
-    const keep = { text: m.text, media: m.media };
-    m.del = true; m.text = "삭제된 메시지입니다"; delete m.media; render();
+    m.del = true; render();
     const j = await send({ action: "del", id: m.id });
-    if (!j.ok){ m.del = false; m.text = keep.text; if (keep.media) m.media = keep.media; alert("삭제하지 못했습니다. " + why(j)); }
+    if (!j.ok){ m.del = false; alert("삭제하지 못했습니다. " + why(j)); }
     render();
   };
   const cx = el("button", null, "취소"); cx.type = "button"; cx.onclick = close;
