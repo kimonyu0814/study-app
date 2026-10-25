@@ -104,6 +104,14 @@ textarea{width:100%;resize:vertical;min-height:70px}
 .chat .rd{font-weight:800;color:#E2A400;font-size:.72rem}
 .chat .rd.ok{color:var(--muted);font-weight:500}
 .chat .bub .who{display:block;font-size:.7rem;font-weight:700;opacity:.8;margin-bottom:2px}
+.bub.del{font-style:italic;opacity:.6}
+.msheet{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.msheet div{background:var(--card);width:min(420px,100%);border-radius:16px 16px 0 0;padding:10px 10px 16px;display:flex;flex-direction:column;gap:6px}
+.msheet p{margin:4px 8px 8px;color:var(--muted);font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msheet button{padding:13px;border:none;border-radius:10px;background:var(--paper);color:var(--ink);font-size:1rem;cursor:pointer}
+.msheet button.bad{color:var(--bad);font-weight:700}
+.editbar{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--muted);padding:6px 2px 0}
+.editbar b{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--ink)}
 .chatin{position:sticky;bottom:0;display:flex;gap:8px;align-items:flex-end;background:var(--paper);padding:10px 0 4px;border-top:1px solid var(--rule)}
 .chatin textarea{flex:1;min-height:42px;max-height:120px;resize:none;border-radius:20px;padding:10px 14px}
 .chatin .btn{border-radius:20px;height:42px}
@@ -638,6 +646,7 @@ function loadMedia(id){
 const dur = s => `${Math.floor(s / 60)}:${pad2(Math.round(s % 60))}`;
 /* 메시지 말풍선 안의 내용 (글 · 사진 · 음성) */
 function msgBody(b, m){
+  if (m.del){ b.classList.add("del"); b.appendChild(document.createTextNode("삭제된 메시지입니다")); return; }
   const md_ = m.media;
   if (!md_){ b.appendChild(document.createTextNode(m.text)); return; }
   b.classList.add("media");
@@ -803,10 +812,11 @@ function chatView(app, x){
     if (x === "fam" && m.from !== ME) b.appendChild(el("span", "who", NAME(m.from)));
     msgBody(b, m);
     if (m.pending) b.style.opacity = ".6";
-    const tm = el("span", "tm", m.pending ? "보내는 중" : m.failed ? "전송 실패" : T(`${pad2(d.getHours())}:${pad2(d.getMinutes())}`));
+    const tm = el("span", "tm", m.pending ? "보내는 중" : m.failed ? "전송 실패" : (m.edited && !m.del ? "수정됨 · " : "") + T(`${pad2(d.getHours())}:${pad2(d.getMinutes())}`));
+    if (m.from === ME && m.id && !m.pending && !m.failed && !m.del) holdMenu(b, m, x);
     if (m.failed) tm.style.color = "var(--bad)";
     /* 카톡처럼: 안 읽었으면 노란 1, 읽었으면 '읽음' */
-    if (m.from === ME && !m.pending && !m.failed){
+    if (m.from === ME && !m.pending && !m.failed && !m.del){
       if (x === "fam"){ const n = famLeft(m); tm.prepend(el("span", n ? "rd" : "rd ok", n ? String(n) : "모두 읽음")); }
       else { const r = readBy(x, m); tm.prepend(el("span", r ? "rd ok" : "rd", r ? "읽음" : "1")); }
     }
@@ -826,9 +836,16 @@ function chatView(app, x){
   ta.addEventListener("compositionend", () => { window.__composing = false; drafts[x] = ta.value; if (window.__needRender){ window.__needRender = false; setTimeout(render, 0); } });
   /* Enter 로 보내기, Shift+Enter 는 줄바꿈 (한글 입력 중엔 무시) */
   ta.onkeydown = e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing && e.keyCode !== 229){ e.preventDefault(); go.click(); } };
-  const go = el("button", "btn primary", "보내기"); go.type = "button";
+  const go = el("button", "btn primary", editMsg && editMsg.room === x ? "수정" : "보내기"); go.type = "button";
   go.onclick = async () => {
     const t = ta.value.trim(); if (!t){ ta.focus(); return; }
+    if (editMsg && editMsg.room === x){            // 메시지 수정
+      const m = data.msgs.find(q => q.id === editMsg.id); editMsg = null; ta.value = ""; drafts[x] = "";
+      if (m && t !== m.text){ m.text = t; m.edited = new Date().toISOString(); }
+      render();
+      if (m){ const j = await send({ action: "edit", id: m.id, text: t }); if (!j.ok) alert("수정하지 못했습니다. " + why(j)); }
+      render(); return;
+    }
     /* 누르자마자 말풍선을 띄우고, 서버 저장은 뒤에서 */
     const temp = { from: ME, to: x, text: t, at: new Date().toISOString(), pending: true };
     data.msgs.push(temp); ta.value = ""; drafts[x] = ""; render();
@@ -881,8 +898,53 @@ function chatView(app, x){
   };
   bar.append(fileIn, cam, mic, ta, go);
   app.appendChild(recbar);
+  if (editMsg && editMsg.room === x){
+    const eb = el("div", "editbar");
+    const cx = el("button", "btn ghost sm", "취소"); cx.type = "button";
+    cx.onclick = () => { editMsg = null; drafts[x] = ""; render(); };
+    eb.append("✏️ 수정 중:", el("b", null, editMsg.old), cx);
+    app.appendChild(eb);
+  }
   app.appendChild(bar);
   setTimeout(() => window.scrollTo({ top: document.body.scrollHeight }), 0);
+}
+/* 내 메시지 길게 누르기 (PC 는 오른쪽 클릭) → 수정 · 삭제 */
+let editMsg = null;
+function holdMenu(b, m, x){
+  let t = null;
+  const open = e => { if (e) e.preventDefault(); clearTimeout(t); msgSheet(m, x); };
+  b.addEventListener("contextmenu", open);
+  b.addEventListener("touchstart", () => { t = setTimeout(() => { t = null; if (navigator.vibrate) navigator.vibrate(20); msgSheet(m, x); }, 500); }, { passive: true });
+  ["touchend", "touchmove", "touchcancel"].forEach(k => b.addEventListener(k, () => clearTimeout(t), { passive: true }));
+  b.title = "길게 누르면 수정 · 삭제";
+}
+function msgSheet(m, x){
+  if (document.querySelector(".msheet")) return;
+  const sh = el("div", "msheet"), box = el("div");
+  box.setAttribute("role", "dialog"); box.setAttribute("aria-label", "메시지 메뉴");
+  box.appendChild(el("p", null, m.text));
+  const close = () => sh.remove();
+  if (!m.media){
+    const ed = el("button", null, "✏️ 수정"); ed.type = "button";
+    ed.onclick = () => { close(); editMsg = { room: x, id: m.id, old: m.text }; drafts[x] = m.text; render(); const ta = document.querySelector(".chatin textarea"); if (ta){ ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } };
+    box.appendChild(ed);
+  }
+  const del = el("button", "bad", "🗑 삭제"); del.type = "button";
+  del.onclick = async () => {
+    if (!del.classList.contains("arm")){ del.classList.add("arm"); del.textContent = "한 번 더 누르면 삭제 (모두에게서 지워져요)"; return; }
+    close();
+    const keep = { text: m.text, media: m.media };
+    m.del = true; m.text = "삭제된 메시지입니다"; delete m.media; render();
+    const j = await send({ action: "del", id: m.id });
+    if (!j.ok){ m.del = false; m.text = keep.text; if (keep.media) m.media = keep.media; alert("삭제하지 못했습니다. " + why(j)); }
+    render();
+  };
+  const cx = el("button", null, "취소"); cx.type = "button"; cx.onclick = close;
+  box.append(del, cx);
+  sh.appendChild(box);
+  sh.onclick = e => { if (e.target === sh) close(); };
+  document.body.appendChild(sh);
+  setTimeout(() => (box.querySelector("button") || cx).focus(), 0);
 }
 function renderMsg(app){
   if (room){ chatView(app, room); return; }
