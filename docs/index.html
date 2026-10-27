@@ -375,6 +375,7 @@ try { if (window.App && App.role() === "0000" && App.pw()) savedPw = App.pw(); }
 const VIEW_ONLY = (() => { try { return !!(window.App && App.role() !== "0000"); } catch(e){ return false; } })();
 if (VIEW_ONLY) $("viewActions").hidden = true;
 try { const n = JSON.parse(localStorage.getItem("studyNav")); if (n && MAIN.some(x => x.k === n.main)) nav = Object.assign(nav, n); } catch(e){}
+nav.main = "home";   // 켤 때는 언제나 홈부터
 try { const c = JSON.parse(localStorage.getItem("examCache")); if (c && c.data){ data = normalize(c.data); rev = c.rev || 0; } } catch(e){}
 const saveNav = () => { try { localStorage.setItem("studyNav", JSON.stringify(nav)); } catch(e){} };
 
@@ -645,8 +646,15 @@ function renderCal(t, only, ex){
   }
   sec.appendChild(grid);
 
-  /* 고른 날 */
-  const box = el("div", "cdayp"), list = by[calSel] || [];
+  /* 고른 날 (오늘이면 마감 전인 학원 숙제도 함께) */
+  const list = (by[calSel] || []).slice();
+  if (calSel === td){
+    const seen = new Set(list.map(x => x.it));
+    TS(t).forEach(x => { if (only && x.k !== only) return; EXAMS.forEach(e => { const s = subjOf(t, x.k, e.k);
+      s.hw.forEach(it => { if (!it.done && !seen.has(it) && (!it.due || it.due > td)) list.push({ it, arr: s.hw, d: it.due || "", n: x.n, g: x.g, kind: "hw", ahead: true }); });
+    }); });
+  }
+  const box = el("div", "cdayp");
   const h3 = el("h3", null, md(cur) + (exams[calSel] ? ` · ${exams[calSel]}고사` : ""));
   h3.appendChild(el("span", "meta", list.length ? `할 일 ${list.length} · 완료 ${list.filter(x => x.it.done).length}` : ""));
   box.appendChild(h3);
@@ -691,7 +699,7 @@ function renderCal(t, only, ex){
       mk.setAttribute("aria-label", x.it.done ? "완료 취소" : "완료로 표시");
       mk.onclick = () => toggleItem(x);
       const dot = el("span", "dot"); dot.style.background = `var(--${x.g})`;
-      li.append(mk, dot, el("span", "txt", x.it.t), el("span", "tag", only ? KIND[x.kind] : `${x.n} · ${KIND[x.kind]}`));
+      li.append(mk, dot, el("span", "txt", x.it.t), el("span", "tag", (only ? KIND[x.kind] : `${x.n} · ${KIND[x.kind]}`) + (x.ahead ? (x.d ? ` · ${md(parseD(x.d))}까지` : " · 마감일 없음") : "")));
       ul.appendChild(li);
     });
     box.appendChild(ul);
@@ -1035,7 +1043,6 @@ function renderHome(p){
     chips.appendChild(c);
   });
   hero.append(left, chips); p.appendChild(hero);
-  p.appendChild(renderCal(t, null));
 
   const g = el("div", "grid2");
   /* 하루 한 일 */
@@ -1109,6 +1116,7 @@ function renderHome(p){
     s4.appendChild(row);
   });
   g.append(s1, s2, s3, s4); p.appendChild(g);
+  p.appendChild(renderCal(t, null));
 }
 
 /* ---------- 성적 계산 · 차트 ---------- */

@@ -18,7 +18,7 @@ object Study {
     val KST: ZoneId = ZoneId.of("Asia/Seoul")
     private val WD = arrayOf("월", "화", "수", "목", "금", "토", "일")
 
-    class Item(val date: String, val text: String, val done: Boolean, val subject: String)
+    class Item(val date: String, val text: String, val done: Boolean, val subject: String, val hw: Boolean = false)
 
     class Summary(
         val today: List<Item>,
@@ -103,7 +103,8 @@ object Study {
         }
         items.sortBy { x -> x.date }
         return Summary(
-            today = items.filter { x -> x.date == t },
+            // 오늘 할 일 + 마감 전인 학원 숙제
+            today = items.filter { x -> x.date == t || (x.hw && !x.done && x.date > t) },
             tomorrow = items.filter { x -> x.date == tm },
             late = items.filter { x -> x.date < t && !x.done },
             dday = dday,
@@ -119,7 +120,9 @@ object Study {
             val d = o.optString(key, "")
             val tx = o.optString("t", "")
             if (d.isEmpty() || tx.isEmpty()) continue
-            out.add(Item(d, prefix + tx, o.optBoolean("done", false), subject))
+            val hw = key == "due"
+            val ahead = hw && d > LocalDate.now(KST).toString()
+            out.add(Item(d, prefix + tx + (if (ahead) " (${label(d)}까지)" else ""), o.optBoolean("done", false), subject, hw))
         }
     }
 }

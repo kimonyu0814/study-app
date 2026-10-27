@@ -223,8 +223,8 @@ class MainActivity : Activity() {
         root.addView(bar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         setContentView(root)
 
-        val saved = getSharedPreferences("study", MODE_PRIVATE).getString("tabKey", "") ?: ""
-        val want = tabs.indexOfFirst { t -> t.key == (openTab ?: saved) }
+        // 켤 때는 언제나 첫 탭(홈)부터, 알림을 눌러 열었을 때만 그 탭
+        val want = tabs.indexOfFirst { t -> t.key == openTab }
         select(if (want >= 0) want else 0)
 
         if (Build.VERSION.SDK_INT >= 33 &&

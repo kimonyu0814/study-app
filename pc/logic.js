@@ -41,7 +41,7 @@ function summarize(data) {
       ["mid", "fin"].forEach(ex => {
         const o = (subs[sj.k] || {})[ex] || {};
         (o.todo || []).forEach(it => { if (it.date && it.t) items.push({ d: it.date, t: it.t, done: !!it.done, n: sj.n }); });
-        (o.hw || []).forEach(it => { if (it.due && it.t) items.push({ d: it.due, t: "[학원 숙제] " + it.t, done: !!it.done, n: sj.n }); });
+        (o.hw || []).forEach(it => { if (it.due && it.t) items.push({ d: it.due, t: "[학원 숙제] " + it.t + (it.due > t ? ` (${label(it.due)}까지)` : ""), done: !!it.done, n: sj.n, hw: true }); });
       });
     });
     (data.cal || []).forEach(it => { if (it.date && it.t) items.push({ d: it.date, t: it.t, done: !!it.done, n: "공통" }); });
@@ -54,7 +54,7 @@ function summarize(data) {
   }
   items.sort((a, b) => a.d < b.d ? -1 : a.d > b.d ? 1 : 0);
   return {
-    today: items.filter(x => x.d === t), tomorrow: items.filter(x => x.d === tm),
+    today: items.filter(x => x.d === t || (x.hw && !x.done && x.d > t)), tomorrow: items.filter(x => x.d === tm),
     late: items.filter(x => x.d < t && !x.done), dday,
     allDone: items.filter(x => x.done).length, all: items.length
   };
