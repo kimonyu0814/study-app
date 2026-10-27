@@ -258,6 +258,17 @@ button.mark{background:transparent;padding:0;cursor:pointer}
 .smgr .del.arm{color:#fff;background:var(--bad);border-radius:5px;font-size:.8rem}
 
 /* 수정 모드 */
+/* 바로 고치기 (관리 안 눌러도) */
+.qe .txt{cursor:text;border-radius:4px}
+.qe .txt:hover{background:var(--rule-soft)}
+.qe .txt input{width:100%;padding:4px 6px;border:1.5px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink);font:inherit}
+.qe button.pill{cursor:pointer;background:none}
+.qe button.pill.s2{background:var(--ok)}
+.qe .due.qd{cursor:pointer;text-decoration:underline dotted}
+.qe .due.qd.none{opacity:.55}
+.qe input.qdate{flex:none;padding:2px 4px;border:1.5px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink);font-size:.8rem}
+.qe .qx{flex:none;border:none;background:none;color:var(--muted);cursor:pointer;padding:0 4px;font-size:.9rem}
+.qe .qx.arm{color:var(--bad);font-weight:700}
 .erow{display:flex;gap:8px;align-items:center;padding:6px 0;flex-wrap:wrap}
 .erow input[type="text"]{flex:1 1 200px;min-width:0;padding:8px 10px;border:1.5px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink)}
 .erow input[type="date"],.erow select{padding:7px 8px;border:1.5px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink)}
@@ -443,6 +454,7 @@ function setSync(s, text){
 function notice(html, bad){ const n = $("notice"); n.hidden = !html; n.className = "notice" + (bad ? " bad" : ""); n.innerHTML = html || ""; return n; }
 async function pull(){
   if (editing || busySave) return;
+  { const ae = document.activeElement; if (ae && ae.closest && ae.closest(".qe") && /INPUT|SELECT|TEXTAREA/.test(ae.tagName)) return; }   // 바로 고치는 중
   try {
     const r = await fetch(API + "?app=exam&t=" + Date.now());
     const j = await r.json();
@@ -1483,7 +1495,9 @@ function renderSection(t, k, ex, s, items){
   h.appendChild(el("span", "meta", meta)); sec.appendChild(h);
 
   if (editing){ sec.appendChild(editList(t, k, ex, s, items)); return sec; }
-  if (!items.length){ sec.appendChild(el("p", "empty", `아직 ${s.n} 내용이 없습니다. '관리'를 눌러 추가하세요.`)); return sec; }
+  const quick = !VIEW_ONLY && s.k !== "range";        // 온유: 관리 안 눌러도 바로 고치기
+  if (quick) sec.classList.add("qe");
+  if (!items.length){ sec.appendChild(el("p", "empty", quick ? `아직 ${s.n} 내용이 없습니다. 아래에서 바로 추가하세요.` : `아직 ${s.n} 내용이 없습니다. '관리'를 눌러 추가하세요.`)); if (quick) sec.appendChild(quickAdd(t, k, ex, s)); return sec; }
   if (s.k === "prog"){
     const n = items.length, d = items.filter(i => i.s === 2).length, p = items.filter(i => i.s === 1).length;
     const bar = el("div", "bar"); const i1 = el("i"); i1.style.width = d / n * 100 + "%"; const b1 = el("b"); b1.style.width = p / n * 100 + "%";
@@ -1495,6 +1509,7 @@ function renderSection(t, k, ex, s, items){
   if (s.k === "hw") list.sort((a, b) => (a.done - b.done) || ((a.due || "9999") < (b.due || "9999") ? -1 : (a.due || "9999") > (b.due || "9999") ? 1 : 0));
   list.forEach(it => {
     const li = el("li");
+    if (quick){ quickRow(li, t, k, ex, s, it, items); ul.appendChild(li); return; }
     if (s.k === "range") li.append(el("span", "bullet"), el("span", "txt", it.t));
     if (s.k === "prog") li.append(el("span", "txt", it.t), el("span", "pill s" + (it.s || 0), PROG[it.s || 0]));
     if (s.k === "hw" || s.k === "todo"){
@@ -1508,7 +1523,92 @@ function renderSection(t, k, ex, s, items){
     ul.appendChild(li);
   });
   sec.appendChild(ul);
+  if (quick) sec.appendChild(quickAdd(t, k, ex, s));
   return sec;
+}
+/* ----- 바로 고치기: 저장된 데이터에서 같은 항목 찾기 (id, 없으면 순서+내용) ----- */
+function qFind(d, t, k, ex, sk, it, idx){
+  const arr = (((d.terms[t] || {}).subjects || {})[k] || {})[ex]; const a = arr && arr[sk]; if (!a) return null;
+  if (it.id) return a.find(x => x.id === it.id) || null;
+  return a[idx] && a[idx].t === it.t ? a[idx] : null;
+}
+function qSave(t, k, ex, sk, it, items, fn){
+  const idx = items.indexOf(it), copy = { id: it.id, t: it.t };
+  commit(d => { const x = qFind(d, t, k, ex, sk, copy, idx); if (x){ if (!x.id) x.id = uid(); fn(x); } });
+}
+function quickRow(li, t, k, ex, s, it, items){
+  const sk = s.k;
+  if (sk !== "prog"){
+    if (it.done) li.classList.add("done");
+    const mk = el("button", "mark", it.done ? "✓" : ""); mk.type = "button"; mk.setAttribute("aria-label", it.done ? "완료 취소" : "완료로 표시");
+    mk.onclick = () => { const want = !it.done; qSave(t, k, ex, sk, it, items, x => { x.done = want; markDone(x, want); }); };
+    li.appendChild(mk);
+  }
+  /* 글: 누르면 고치기 */
+  const tx = el("span", "txt", it.t); tx.tabIndex = 0; tx.setAttribute("role", "button"); tx.setAttribute("aria-label", `${it.t} 고치기`);
+  const editText = () => {
+    if (tx.querySelector("input")) return;
+    const inp = el("input"); inp.type = "text"; inp.value = it.t || ""; inp.setAttribute("aria-label", s.n + " 내용 고치기");
+    tx.textContent = ""; tx.appendChild(inp); inp.focus(); inp.select();
+    let done = false;
+    const finish = save => { if (done) return; done = true; const v = inp.value.trim(); if (save && v && v !== it.t) qSave(t, k, ex, sk, it, items, x => { x.t = v; }); else render(); };
+    inp.onkeydown = e => { if (e.key === "Enter" && !e.isComposing){ e.preventDefault(); finish(true); } if (e.key === "Escape") finish(false); };
+    inp.onblur = () => finish(true);
+  };
+  tx.onclick = editText; tx.onkeydown = e => { if (e.key === "Enter") editText(); };
+  li.appendChild(tx);
+  /* 진도: 누를 때마다 안 함 → 진행 중 → 완료 */
+  if (sk === "prog"){
+    const st = it.s || 0, pb = el("button", "pill s" + st, PROG[st]); pb.type = "button"; pb.setAttribute("aria-label", `진도 상태 ${PROG[st]}, 누르면 바꾸기`);
+    pb.onclick = () => { const n = ((it.s || 0) + 1) % 3; qSave(t, k, ex, sk, it, items, x => { x.s = n; markDone(x, n === 2); }); };
+    li.appendChild(pb);
+  }
+  /* 날짜: 누르면 바꾸기 */
+  if (sk === "hw" || sk === "todo"){
+    const key = sk === "hw" ? "due" : "date", v = it[key] || "";
+    let label = "날짜", cls = "due qd";
+    if (sk === "hw"){ const di = dueInfo(v); if (di){ label = di.label; if (!it.done) cls += " " + di.cls; } else { label = "마감일"; cls += " none"; } }
+    else if (v){ const dd = parseD(v); label = md(dd); if (!it.done && v < today()) cls += " over"; else if (v === today()) cls += " soon"; }
+    else cls += " none";
+    const dl = el("span", cls, label); dl.tabIndex = 0; dl.setAttribute("role", "button"); dl.setAttribute("aria-label", (sk === "hw" ? "마감일" : "할 날짜") + " 바꾸기");
+    const editDate = () => {
+      const di = el("input", "qdate"); di.type = "date"; di.value = v; di.setAttribute("aria-label", sk === "hw" ? "마감일" : "할 날짜");
+      dl.replaceWith(di); di.focus(); try { di.showPicker && di.showPicker(); } catch(e){}
+      di.onchange = () => qSave(t, k, ex, sk, it, items, x => { x[key] = di.value; });
+      di.onblur = () => setTimeout(() => { if (document.body.contains(di)) render(); }, 200);
+    };
+    dl.onclick = editDate; dl.onkeydown = e => { if (e.key === "Enter") editDate(); };
+    li.appendChild(dl);
+  }
+  /* 지우기: 두 번 누르기 */
+  const del = el("button", "qx", "✕"); del.type = "button"; del.setAttribute("aria-label", "삭제");
+  del.onclick = () => {
+    if (!del.classList.contains("arm")){ del.classList.add("arm"); del.textContent = "삭제?"; setTimeout(() => { del.classList.remove("arm"); del.textContent = "✕"; }, 3000); return; }
+    const idx = items.indexOf(it), copy = { id: it.id, t: it.t };
+    commit(d => { const x = qFind(d, t, k, ex, sk, copy, idx); if (x){ const a = d.terms[t].subjects[k][ex][sk]; a.splice(a.indexOf(x), 1); } });
+  };
+  li.appendChild(del);
+}
+function quickAdd(t, k, ex, s){
+  const sk = s.k, row = el("div", "erow");
+  const tx = el("input"); tx.type = "text"; tx.placeholder = s.ph; tx.setAttribute("aria-label", s.add);
+  row.appendChild(tx);
+  let dt = null;
+  if (sk === "hw" || sk === "todo"){ dt = el("input"); dt.type = "date"; dt.setAttribute("aria-label", sk === "hw" ? "마감일" : "할 날짜 (캘린더에 표시)"); if (sk === "todo") dt.value = today(); row.appendChild(dt); }
+  const b = el("button", "btn primary", "추가"); b.type = "button";
+  const go = () => {
+    const v = tx.value.trim(); if (!v){ tx.focus(); return; }
+    const it = { id: uid(), t: v };
+    if (sk === "prog") it.s = 0;
+    if (sk === "hw"){ it.done = false; it.due = dt.value; }
+    if (sk === "todo"){ it.done = false; it.date = dt.value; }
+    tx.value = "";
+    commit(d => { const a = d.terms[t].subjects[k][ex][sk]; if (!a.some(x => x.id === it.id)) a.push(Object.assign({}, it)); });
+  };
+  b.onclick = go;
+  tx.onkeydown = e => { if (e.key === "Enter" && !e.isComposing){ e.preventDefault(); go(); } };
+  row.appendChild(b);
+  return row;
 }
 function markDone(it, on){ if (on) it.doneAt = today(); else delete it.doneAt; }
 function editList(t, k, ex, s, items){
