@@ -571,12 +571,15 @@ function commit(mut){
 function findById(d, id){
   let hit = null;
   (d.cal || []).forEach(it => { if (it.id === id) hit = it; });
-  TERMS.forEach(t => Object.values(d.terms[t].subjects).forEach(pr => EXAMS.forEach(e => { const o = pr[e.k]; if (o) ["hw", "todo"].forEach(k => o[k].forEach(it => { if (it.id === id) hit = it; })); })));
+  TERMS.forEach(t => Object.values(d.terms[t].subjects).forEach(pr => EXAMS.forEach(e => { const o = pr[e.k]; if (o) ["hw", "todo", "prog"].forEach(k => o[k].forEach(it => { if (it.id === id) hit = it; })); })));
   return hit;
 }
 
 /* ---------- 캘린더 ---------- */
-const KIND = { todo: "할 것", hw: "학원 숙제", cal: "공통" };
+const KIND = { todo: "할 것", hw: "학원 숙제", cal: "공통", prog: "진도 수업" };
+/* 진도는 '완료' 상태가 끝낸 것 */
+const isDone = x => x.kind === "prog" ? x.it.s === 2 : !!x.it.done;
+function setDone(it, kind, want){ if (kind === "prog") it.s = want ? 2 : 0; else it.done = want; markDone(it, want); }
 function calItems(t, only){
   const out = [];
   TS(t).forEach(x => {
@@ -585,6 +588,7 @@ function calItems(t, only){
       const s = subjOf(t, x.k, e.k);
       s.todo.forEach(it => { if (it.date) out.push({ it, arr: s.todo, d: it.date, n: x.n, g: x.g, kind: "todo" }); });
       s.hw.forEach(it => { if (it.due) out.push({ it, arr: s.hw, d: it.due, n: x.n, g: x.g, kind: "hw" }); });
+      s.prog.forEach(it => { if (it.date) out.push({ it, arr: s.prog, d: it.date, n: x.n, g: x.g, kind: "prog" }); });
     });
   });
   if (!only) (view().cal || []).forEach(it => { if (it.date) out.push({ it, arr: view().cal, d: it.date, n: "공통", g: "etc", kind: "cal" }); });
@@ -592,11 +596,11 @@ function calItems(t, only){
 }
 function toggleItem(x){
   if (VIEW_ONLY) return;
-  const want = !x.it.done;
-  if (editing){ x.it.done = want; markDone(x.it, want); render(); return; }
+  const want = !isDone(x), kind = x.kind;
+  if (editing){ setDone(x.it, kind, want); render(); return; }
   if (!x.it.id){ notice("이 항목은 '관리'에서 체크해 주세요."); return; }
   const id = x.it.id;
-  commit(d => { const it = findById(d, id); if (it){ it.done = want; markDone(it, want); } });
+  commit(d => { const it = findById(d, id); if (it) setDone(it, kind, want); });
 }
 function renderCal(t, only, ex){
   const sec = el("section", "sec calsec");
@@ -605,11 +609,11 @@ function renderCal(t, only, ex){
   const [Y, M] = nav.calM.split("-").map(Number);
   const items = calItems(t, only);
   const by = {}; items.forEach(x => (by[x.d] = by[x.d] || []).push(x));
-  Object.values(by).forEach(a => a.sort((p, q) => (p.it.done - q.it.done)));
+  Object.values(by).forEach(a => a.sort((p, q) => (isDone(p) - isDone(q))));
   const exams = {}; EXAMS.forEach(e => { const d = examDate(t, e.k); if (d) exams[d] = e.n.slice(0, 2); });
 
   const h = el("h2", null, only ? "캘린더" : "캘린더 · 과목별 할 일");
-  const left = items.filter(x => !x.it.done && x.d < today()).length;
+  const left = items.filter(x => !isDone(x) && x.d < today()).length;
   h.appendChild(el("span", "meta", left ? `밀린 일 ${left}개` : ""));
   sec.appendChild(h);
 
@@ -648,10 +652,10 @@ function renderCal(t, only, ex){
     if (exams[k]) dl.appendChild(el("span", "ex", exams[k]));
     c.appendChild(dl);
     const MAX = 2;
-    list.slice(0, MAX).forEach(x => { const e = el("span", "ev" + (x.it.done ? " fin" : ""), x.it.t); e.title = `${x.n} · ${x.it.t}`; e.style.setProperty("--c", `var(--${x.g})`); c.appendChild(e); });
+    list.slice(0, MAX).forEach(x => { const e = el("span", "ev" + (isDone(x) ? " fin" : ""), x.it.t); e.title = `${x.n} · ${x.it.t}`; e.style.setProperty("--c", `var(--${x.g})`); c.appendChild(e); });
     if (list.length > MAX) c.appendChild(el("span", "more", `+${list.length - MAX}`));
     const dots = el("span", "dots");
-    list.forEach(x => { const i2 = el("i", x.it.done ? "fin" : ""); i2.style.setProperty("--c", `var(--${x.g})`); dots.appendChild(i2); });
+    list.forEach(x => { const i2 = el("i", isDone(x) ? "fin" : ""); i2.style.setProperty("--c", `var(--${x.g})`); dots.appendChild(i2); });
     c.appendChild(dots);
     c.onclick = () => { calSel = k; if (d.getMonth() !== M - 1) nav.calM = k.slice(0, 7); saveNav(); render(); };
     grid.appendChild(c);
@@ -668,13 +672,13 @@ function renderCal(t, only, ex){
   }
   const box = el("div", "cdayp");
   const h3 = el("h3", null, md(cur) + (exams[calSel] ? ` · ${exams[calSel]}고사` : ""));
-  h3.appendChild(el("span", "meta", list.length ? `할 일 ${list.length} · 완료 ${list.filter(x => x.it.done).length}` : ""));
+  h3.appendChild(el("span", "meta", list.length ? `할 일 ${list.length} · 완료 ${list.filter(x => isDone(x)).length}` : ""));
   box.appendChild(h3);
   if (editing){
     list.forEach(x => {
       const row = el("div", "erow");
-      const cb = el("input"); cb.type = "checkbox"; cb.checked = !!x.it.done; cb.setAttribute("aria-label", "완료");
-      cb.onchange = () => { x.it.done = cb.checked; markDone(x.it, cb.checked); render(); };
+      const cb = el("input"); cb.type = "checkbox"; cb.checked = isDone(x); cb.setAttribute("aria-label", "완료");
+      cb.onchange = () => { setDone(x.it, x.kind, cb.checked); render(); };
       const tg = el("span", "tag", only ? KIND[x.kind] : `${x.n} · ${KIND[x.kind]}`);
       const tx = el("input"); tx.type = "text"; tx.value = x.it.t || ""; tx.setAttribute("aria-label", "할 일 내용"); tx.dataset.id = x.it.id || "";
       tx.oninput = () => { x.it.t = tx.value; };
@@ -706,9 +710,9 @@ function renderCal(t, only, ex){
   else {
     const ul = el("ul", "list");
     list.forEach(x => {
-      const li = el("li"); if (x.it.done) li.classList.add("done");
-      const mk = el("button", "mark", x.it.done ? "✓" : ""); mk.type = "button";
-      mk.setAttribute("aria-label", x.it.done ? "완료 취소" : "완료로 표시");
+      const li = el("li"); if (isDone(x)) li.classList.add("done");
+      const mk = el("button", "mark", isDone(x) ? "✓" : ""); mk.type = "button";
+      mk.setAttribute("aria-label", isDone(x) ? "완료 취소" : "완료로 표시");
       mk.onclick = () => toggleItem(x);
       const dot = el("span", "dot"); dot.style.background = `var(--${x.g})`;
       li.append(mk, dot, el("span", "txt", x.it.t), el("span", "tag", (only ? KIND[x.kind] : `${x.n} · ${KIND[x.kind]}`) + (x.ahead ? (x.d ? ` · ${md(parseD(x.d))}까지` : " · 마감일 없음") : "")));
@@ -1563,16 +1567,17 @@ function quickRow(li, t, k, ex, s, it, items){
     pb.onclick = () => { const n = ((it.s || 0) + 1) % 3; qSave(t, k, ex, sk, it, items, x => { x.s = n; markDone(x, n === 2); }); };
     li.appendChild(pb);
   }
-  /* 날짜: 누르면 바꾸기 */
-  if (sk === "hw" || sk === "todo"){
+  /* 날짜: 누르면 바꾸기 (진도는 수업일) */
+  if (sk === "hw" || sk === "todo" || sk === "prog"){
     const key = sk === "hw" ? "due" : "date", v = it[key] || "";
     let label = "날짜", cls = "due qd";
-    if (sk === "hw"){ const di = dueInfo(v); if (di){ label = di.label; if (!it.done) cls += " " + di.cls; } else { label = "마감일"; cls += " none"; } }
+    if (sk === "prog"){ if (v){ label = "수업 " + md(parseD(v)); if (v === today()) cls += " soon"; } else { label = "수업일"; cls += " none"; } }
+    else if (sk === "hw"){ const di = dueInfo(v); if (di){ label = di.label; if (!it.done) cls += " " + di.cls; } else { label = "마감일"; cls += " none"; } }
     else if (v){ const dd = parseD(v); label = md(dd); if (!it.done && v < today()) cls += " over"; else if (v === today()) cls += " soon"; }
     else cls += " none";
-    const dl = el("span", cls, label); dl.tabIndex = 0; dl.setAttribute("role", "button"); dl.setAttribute("aria-label", (sk === "hw" ? "마감일" : "할 날짜") + " 바꾸기");
+    const dl = el("span", cls, label); dl.tabIndex = 0; dl.setAttribute("role", "button"); dl.setAttribute("aria-label", (sk === "hw" ? "마감일" : sk === "prog" ? "수업일" : "할 날짜") + " 바꾸기");
     const editDate = () => {
-      const di = el("input", "qdate"); di.type = "date"; di.value = v; di.setAttribute("aria-label", sk === "hw" ? "마감일" : "할 날짜");
+      const di = el("input", "qdate"); di.type = "date"; di.value = v; di.setAttribute("aria-label", sk === "hw" ? "마감일" : sk === "prog" ? "수업일" : "할 날짜");
       dl.replaceWith(di); di.focus(); try { di.showPicker && di.showPicker(); } catch(e){}
       di.onchange = () => qSave(t, k, ex, sk, it, items, x => { x[key] = di.value; });
       di.onblur = () => setTimeout(() => { if (document.body.contains(di)) render(); }, 200);
@@ -1594,12 +1599,12 @@ function quickAdd(t, k, ex, s){
   const tx = el("input"); tx.type = "text"; tx.placeholder = s.ph; tx.setAttribute("aria-label", s.add);
   row.appendChild(tx);
   let dt = null;
-  if (sk === "hw" || sk === "todo"){ dt = el("input"); dt.type = "date"; dt.setAttribute("aria-label", sk === "hw" ? "마감일" : "할 날짜 (캘린더에 표시)"); if (sk === "todo") dt.value = today(); row.appendChild(dt); }
+  if (sk === "hw" || sk === "todo" || sk === "prog"){ dt = el("input"); dt.type = "date"; dt.setAttribute("aria-label", sk === "hw" ? "마감일" : sk === "prog" ? "수업일 (캘린더에 표시)" : "할 날짜 (캘린더에 표시)"); dt.title = sk === "prog" ? "수업일" : ""; if (sk === "todo") dt.value = today(); row.appendChild(dt); }
   const b = el("button", "btn primary", "추가"); b.type = "button";
   const go = () => {
     const v = tx.value.trim(); if (!v){ tx.focus(); return; }
     const it = { id: uid(), t: v };
-    if (sk === "prog") it.s = 0;
+    if (sk === "prog"){ it.s = 0; if (dt.value) it.date = dt.value; }
     if (sk === "hw"){ it.done = false; it.due = dt.value; }
     if (sk === "todo"){ it.done = false; it.date = dt.value; }
     tx.value = "";
@@ -1629,6 +1634,9 @@ function editList(t, k, ex, s, items){
       PROG.forEach((p, i) => sel.add(new Option(p, i))); sel.value = it.s || 0;
       sel.onchange = () => { it.s = +sel.value; markDone(it, it.s === 2); };
       row.appendChild(sel);
+      const dt = el("input"); dt.type = "date"; dt.value = it.date || ""; dt.setAttribute("aria-label", "수업일 (캘린더에 표시)"); dt.title = "수업일";
+      dt.onchange = () => { it.date = dt.value; };
+      row.appendChild(dt);
     }
     if (s.k === "hw"){
       const dt = el("input"); dt.type = "date"; dt.value = it.due || ""; dt.setAttribute("aria-label", "마감일");
