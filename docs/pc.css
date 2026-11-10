@@ -1,83 +1,85 @@
-/* PC 앱 전용 디자인: 윈도우 설치 마법사(기본 대화상자) 느낌
-   - 회색 창 배경, 흰 패널, 각진 모서리, 맑은 고딕, 회색 기본 버튼
+/* PC 앱 전용 디자인: 옛날 윈도우 설치 마법사(InstallShield) 느낌
+   - 회색 창, 흰 머리띠(제목), 홈 파인 구분선, 입체 버튼, 초록 칸 진행 막대, 돋움/Tahoma
    - 폰 앱 · 웹에는 적용되지 않음 (PC 앱에서만 불러옴) */
 
-/* ---- 색: 항상 밝은 윈도우 기본색 ---- */
+/* ---- 색: 클래식 윈도우 ---- */
 html.pc{
-  --paper:#F0F0F0; --card:#FFFFFF; --sheet:#FFFFFF;
-  --ink:#000000; --pen:#000000; --muted:#5A5A5A;
-  --rule:#ADADAD; --rule-soft:#DCDCDC; --line:#ADADAD; --line-soft:#DCDCDC;
-  --accent:#0078D7; --ok:#107C10; --bad:#C42B1C; --warn:#9D5D00; --mark:#C42B1C;
+  --paper:#D4D0C8; --card:#D4D0C8; --sheet:#FFFFFF;
+  --ink:#000000; --pen:#000000; --muted:#404040;
+  --rule:#808080; --rule-soft:#B0ACA4; --line:#808080; --line-soft:#B0ACA4;
+  --accent:#0A246A; --ok:#008000; --bad:#C00000; --warn:#806000; --mark:#C00000;
   color-scheme:light;
 }
-html.pc, html.pc body{background:#F0F0F0 !important;color:#000 !important}
-html.pc body, html.pc button, html.pc input, html.pc select, html.pc textarea{
-  font-family:"Segoe UI","Malgun Gothic","맑은 고딕",sans-serif !important;
-}
-html.pc body{font-size:14px}
-html.pc *:not(code):not(pre):not(kbd){font-family:"Segoe UI","Malgun Gothic","맑은 고딕",sans-serif !important}
+html.pc, html.pc body{background:#D4D0C8 !important;color:#000 !important}
+html.pc *:not(code):not(pre):not(kbd){font-family:Tahoma,"돋움",Dotum,"Malgun Gothic",sans-serif !important;letter-spacing:0 !important}
+html.pc body{font-size:13px}
 
 /* ---- 둥근 모서리 · 그림자 없애기 ---- */
-html.pc *, html.pc *::before, html.pc *::after{border-radius:0 !important;box-shadow:none !important;text-shadow:none !important}
+html.pc *, html.pc *::before, html.pc *::after{border-radius:0 !important;box-shadow:none !important;text-shadow:none !important;transition:none !important}
 
-/* ---- 제목: 설치 마법사의 굵은 고딕 제목 ---- */
-html.pc h1, html.pc h2, html.pc h3, html.pc h4{font-family:"Segoe UI","Malgun Gothic",sans-serif !important;letter-spacing:0 !important;color:#000}
-html.pc h1{font-weight:600}
-html.pc h2{font-weight:600}
+/* ---- 제목: 흰 머리띠 + 아래 홈 파인 선 (설치 마법사 윗부분) ---- */
+html.pc h1{font-weight:700 !important;font-size:15px !important;color:#000;margin:0 0 6px !important}
+html.pc .top:has(h1){background:#FFFFFF !important;border-bottom:2px groove #FFFFFF !important;padding:12px 16px !important;margin-bottom:12px !important;align-items:center}
+html.pc main > h1{display:block;background:#FFFFFF;margin:0 !important;padding:12px 16px !important;border-bottom:2px groove #FFFFFF}
+html.pc main > h1 + .top{background:#FFFFFF;padding:0 16px 12px !important;margin-bottom:12px !important;border-bottom:2px groove #FFFFFF}
+html.pc h2, html.pc h3, html.pc h4{font-weight:700 !important;color:#000;font-size:13px !important}
 
-/* ---- 패널: 흰 바탕 + 얇은 회색 테두리 ---- */
-html.pc section.sec, html.pc section.card, html.pc .card, html.pc .hero, html.pc .panel, html.pc .box,
-html.pc .modal > div, html.pc .msheet > div{
-  background:#FFFFFF !important;border:1px solid #C8C8C8 !important;
+/* ---- 묶음 상자: 회색 바탕 + 홈 파인 테두리 (그룹 상자) ---- */
+html.pc section.sec, html.pc section.card, html.pc .card, html.pc .hero, html.pc .panel, html.pc .box{
+  background:#D4D0C8 !important;border:2px groove #FFFFFF !important;
 }
+/* 흰 목록 칸 (움푹 들어간 상자) */
+html.pc ul.list, html.pc .chat, html.pc .rooms, html.pc .cdayp, html.pc .sheet{
+  background:#FFFFFF !important;border:2px inset #FFFFFF !important;
+}
+html.pc .modal > div, html.pc .msheet > div{background:#D4D0C8 !important;border:2px outset #FFFFFF !important}
 
-/* ---- 기본 버튼: 회색 바탕 · 회색 테두리 ---- */
+/* ---- 버튼: 볼록한 입체 버튼 ---- */
 html.pc .btn, html.pc .add, html.pc .chip, html.pc .term, html.pc .tab, html.pc .stab,
 html.pc .reset, html.pc .sync, html.pc .plain, html.pc .good, html.pc .primary, html.pc .tg, html.pc .ib,
 html.pc .login button, html.pc .modal button, html.pc .msheet button, html.pc .editbar button{
-  background:#E1E1E1 !important;color:#000 !important;border:1px solid #ADADAD !important;
-  font-weight:400 !important;min-height:26px;padding:3px 14px !important;cursor:default !important;
-  transition:none !important;
-}
-html.pc .btn:hover, html.pc .add:hover, html.pc .chip:hover, html.pc .term:hover, html.pc .tab:hover, html.pc .stab:hover,
-html.pc .reset:hover, html.pc .sync:hover, html.pc .plain:hover, html.pc .good:hover, html.pc .primary:hover, html.pc .tg:hover, html.pc .ib:hover,
-html.pc .login button:hover, html.pc .modal button:hover, html.pc .msheet button:hover, html.pc .editbar button:hover{
-  background:#E5F1FB !important;border-color:#0078D7 !important;
+  background:#D4D0C8 !important;color:#000 !important;
+  border:2px solid !important;border-color:#FFFFFF #404040 #404040 #FFFFFF !important;
+  outline:1px solid transparent;font-weight:400 !important;min-height:24px;padding:2px 14px !important;cursor:default !important;
 }
 html.pc .btn:active, html.pc .add:active, html.pc .chip:active, html.pc .term:active, html.pc .tab:active, html.pc .stab:active,
-html.pc .primary:active, html.pc .login button:active, html.pc .modal button:active{
-  background:#CCE4F7 !important;border-color:#005499 !important;
+html.pc .reset:active, html.pc .sync:active, html.pc .plain:active, html.pc .good:active, html.pc .primary:active, html.pc .tg:active, html.pc .ib:active,
+html.pc .login button:active, html.pc .modal button:active, html.pc .msheet button:active, html.pc .editbar button:active{
+  border-color:#404040 #FFFFFF #FFFFFF #404040 !important;padding:3px 13px 1px 15px !important;
 }
-/* '확인'처럼 기본 버튼: 파란 테두리 */
-html.pc .primary, html.pc .btn.primary, html.pc .login button{border:1px solid #0078D7 !important;outline:1px solid #0078D7;outline-offset:-2px}
-/* 눌린 상태(고른 탭 · 칩) */
+/* '다음 >' 같은 기본 버튼: 검은 테두리 한 줄 더 */
+html.pc .primary, html.pc .btn.primary, html.pc .login button{outline:1px solid #000 !important;outline-offset:0}
+/* 눌린 상태(고른 탭 · 칩): 쑥 들어간 버튼 */
 html.pc [aria-pressed="true"], html.pc [aria-selected="true"].tab, html.pc [aria-selected="true"].stab, html.pc .chip.on{
-  background:#CCE4F7 !important;border-color:#0078D7 !important;color:#000 !important;
+  background:#E8E6E1 !important;color:#000 !important;border-color:#404040 #FFFFFF #FFFFFF #404040 !important;
 }
 html.pc [aria-pressed="true"] *, html.pc [aria-selected="true"] *{color:#000 !important}
-html.pc [aria-pressed="true"] .bar{background:#E6E6E6 !important}
-html.pc button:disabled{background:#CCCCCC !important;color:#838383 !important;border-color:#BFBFBF !important}
-html.pc .btn.bad, html.pc .msheet button.bad{color:#C42B1C !important}
+html.pc button:disabled{color:#808080 !important}
+html.pc .btn.bad, html.pc .msheet button.bad{color:#C00000 !important}
+html.pc :focus-visible{outline:1px dotted #000 !important;outline-offset:-4px}
 
-/* ---- 입력칸: 흰 바탕 · 진회색 테두리 ---- */
+/* ---- 입력칸: 움푹 들어간 흰 칸 ---- */
 html.pc input[type="text"], html.pc input[type="password"], html.pc input[type="number"], html.pc input[type="date"],
 html.pc input[type="time"], html.pc input:not([type]), html.pc select, html.pc textarea{
-  background:#FFFFFF !important;color:#000 !important;border:1px solid #7A7A7A !important;
+  background:#FFFFFF !important;color:#000 !important;
+  border:2px solid !important;border-color:#808080 #FFFFFF #FFFFFF #808080 !important;
 }
-html.pc input:focus, html.pc select:focus, html.pc textarea:focus{outline:none !important;border-color:#0078D7 !important}
-html.pc input[type="checkbox"], html.pc input[type="radio"]{accent-color:#0078D7}
-html.pc :focus-visible{outline:1px dotted #000 !important;outline-offset:1px}
+html.pc input:focus, html.pc select:focus, html.pc textarea:focus{outline:none !important}
+html.pc input[type="checkbox"], html.pc input[type="radio"]{accent-color:#0A246A}
+html.pc ::selection{background:#0A246A;color:#FFFFFF}
 
-/* ---- 진행 막대: 윈도우 초록 막대 ---- */
-html.pc .bar{background:#E6E6E6 !important;border:1px solid #BCBCBC !important}
-html.pc .bar i{background:#06B025 !important}
+/* ---- 진행 막대: 칸칸이 초록 블록 ---- */
+html.pc .bar{background:#FFFFFF !important;border:2px solid !important;border-color:#808080 #FFFFFF #FFFFFF #808080 !important;height:14px !important;padding:1px}
+html.pc .bar i, html.pc .bar b{background:repeating-linear-gradient(90deg,#2FB02F 0 8px,transparent 8px 10px) !important}
+html.pc .bar b{opacity:.45}
 
-/* ---- 바깥 틀(pc.html): 위쪽 탭을 윈도우 탭 모양으로 ---- */
-html.pc .main .bar{background:#F0F0F0 !important;border:none !important;border-bottom:1px solid #ADADAD !important;padding:6px 8px 0 !important;gap:2px !important}
-html.pc .main .bar .t{color:#000 !important;background:#F0F0F0 !important;border:1px solid #ADADAD !important;border-bottom:none !important;padding:5px 16px !important;margin-bottom:-1px;font-size:.92rem !important}
-html.pc .main .bar .t:hover{background:#E5F1FB !important}
-html.pc .main .bar .t[aria-selected="true"]{background:#FFFFFF !important;font-weight:400 !important;border-bottom:1px solid #FFFFFF !important;position:relative;top:0}
+/* ---- 바깥 틀(pc.html): 위쪽 메뉴를 클래식 탭으로 ---- */
+html.pc .main .bar{background:#D4D0C8 !important;border:none !important;border-bottom:2px solid #FFFFFF !important;padding:6px 8px 0 !important;gap:0 !important;height:auto !important}
+html.pc .main .bar .t{color:#000 !important;background:#D4D0C8 !important;border:2px solid !important;border-color:#FFFFFF #404040 transparent #FFFFFF !important;border-bottom:none !important;padding:4px 14px !important;margin-bottom:-2px;font-size:13px !important;font-weight:400 !important}
+html.pc .main .bar .t[aria-selected="true"]{padding:6px 16px 6px !important;margin-top:-3px;position:relative;z-index:1;background:#D4D0C8 !important;border-bottom:2px solid #D4D0C8 !important}
 html.pc .main .bar label{color:#000 !important}
-html.pc .frames iframe{background:#F0F0F0 !important}
-html.pc .login h1{font-size:1.6rem !important}
-html.pc .login input{font-size:1.2rem !important;letter-spacing:.3em}
+html.pc .frames iframe{background:#D4D0C8 !important}
+html.pc .login form{background:#D4D0C8;border:2px outset #FFFFFF !important;padding:0 0 16px}
+html.pc .login h1{margin:0 0 12px !important;text-align:left}
+html.pc .login p, html.pc .login input, html.pc .login .err, html.pc .login button{margin-left:16px !important;margin-right:16px !important;width:calc(100% - 32px) !important}
+html.pc .login input{font-size:15px !important;letter-spacing:.3em}
