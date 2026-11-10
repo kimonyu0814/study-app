@@ -198,10 +198,14 @@ async function pull(){
     /* 입력 중이면 화면을 다시 그리지 않음 (채팅 입력창은 쓰던 글을 지키면서 다시 그림) */
     const ae = document.activeElement, chatIn = !!(ae && ae.closest && ae.closest(".chatin") && ae.tagName === "TEXTAREA");
     if (busy || window.__rec || window.__composing || (ae && /INPUT|TEXTAREA|SELECT/.test(ae.tagName) && !chatIn)) return;
+    /* 바뀐 게 없으면 다시 그리지 않음 (읽던 위치가 흔들리지 않게) */
+    const sig = JSON.stringify(j.data) + JSON.stringify(j.reads || null);
+    if (sig === lastSig){ setSync("on"); return; }
+    lastSig = sig;
     accept(j.data); setSync("on"); render();
   } catch(e){ setSync("err"); }
 }
-let busy = false;
+let busy = false, lastSig = "";
 /* 실패 이유를 알기 쉽게 */
 function why(j){
   const e = j && j.error;
@@ -237,7 +241,16 @@ function header(title, sub){
 }
 /* 채팅방마다 쓰던 글 보관 (화면을 다시 그려도 안 지워지게) */
 const drafts = {};
+/* 채팅 스크롤: 맨 아래를 보고 있었거나 방을 새로 열었을 때만 맨 아래로, 위를 읽는 중이면 그 자리 그대로 */
+let chatKey = "", chatBottom = true, chatY = 0, forceBottom = false;
+function keepChatScroll(key){
+  const same = key === chatKey && !forceBottom; chatKey = key; forceBottom = false;
+  const go = () => { if (!same || chatBottom) window.scrollTo({ top: document.body.scrollHeight }); else window.scrollTo({ top: chatY }); };
+  go(); setTimeout(go, 0);
+}
 function render(){
+  chatY = window.scrollY; chatBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 80;
+  if (!document.querySelector(".chat")) chatKey = "";
   const ae = document.activeElement, inChat = !!(ae && ae.closest && ae.closest(".chatin") && ae.tagName === "TEXTAREA");
   const sel = inChat ? [ae.selectionStart, ae.selectionEnd] : null;
   const app = $("app"); app.innerHTML = "";
@@ -778,7 +791,7 @@ function pairView(app, p){
     box.appendChild(row);
   });
   app.appendChild(box);
-  setTimeout(() => window.scrollTo({ top: document.body.scrollHeight }), 0);
+  keepChatScroll("pair:" + pair);
 }
 function roomList(){
   const ul = el("ul", "rooms");
@@ -849,7 +862,7 @@ function chatView(app, x){
     }
     /* 누르자마자 말풍선을 띄우고, 서버 저장은 뒤에서 */
     const temp = { from: ME, to: x, text: t, at: new Date().toISOString(), pending: true };
-    data.msgs.push(temp); ta.value = ""; drafts[x] = ""; render();
+    data.msgs.push(temp); ta.value = ""; drafts[x] = ""; forceBottom = true; render();
     const j = await send({ action: "msg", to: [x], text: t });
     if (!j.ok){ temp.pending = false; temp.failed = true; if (!data.msgs.includes(temp)) data.msgs.push(temp); }
     if (window.__composing) window.__needRender = true; else render();
@@ -907,7 +920,7 @@ function chatView(app, x){
     app.appendChild(eb);
   }
   app.appendChild(bar);
-  setTimeout(() => window.scrollTo({ top: document.body.scrollHeight }), 0);
+  keepChatScroll("room:" + x);
 }
 /* 내 메시지 길게 누르기 (PC 는 오른쪽 클릭) → 수정 · 삭제 */
 let editMsg = null;
