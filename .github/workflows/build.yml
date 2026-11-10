@@ -9,6 +9,7 @@ on:
       - "RELEASE_NOTES.md"
       - "pc/**"
       - ".github/workflows/pc.yml"
+      - ".gitignore"
   workflow_dispatch:
 
 permissions:
