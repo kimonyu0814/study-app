@@ -6,3 +6,4 @@ local.properties
 app/src/main/assets/
 pc/node_modules/
 pc/dist/
+!pc/build/

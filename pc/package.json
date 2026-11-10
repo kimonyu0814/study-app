@@ -19,9 +19,9 @@
   "build": {
     "appId": "com.onyu.study.pc",
     "productName": "학습기록",
-    "files": ["main.js", "preload.js", "logic.js", "shell.html", "build/icon.png", "build/tray.png"],
+    "files": ["main.js", "preload.js", "logic.js", "shell.html", "build/icon.png", "build/icon.ico", "build/tray.png"],
     "directories": { "output": "dist", "buildResources": "build" },
-    "win": { "target": "nsis", "icon": "build/icon.png", "artifactName": "StudyApp-Setup.${ext}" },
+    "win": { "target": "nsis", "icon": "build/icon.ico", "artifactName": "StudyApp-Setup.${ext}" },
     "nsis": { "oneClick": true, "perMachine": false, "createDesktopShortcut": true, "shortcutName": "학습기록" },
     "publish": [{ "provider": "generic", "url": "https://github.com/kimonyu0814/study-app/releases/download/pc-latest/" }]
   }
