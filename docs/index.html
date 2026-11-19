@@ -263,8 +263,10 @@ button.mark{background:transparent;padding:0;cursor:pointer}
 .qe .txt{cursor:text;border-radius:4px}
 .qe .txt:hover{background:var(--rule-soft)}
 .qe .txt input{width:100%;padding:4px 6px;border:1.5px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink);font:inherit}
-.qe button.pill{cursor:pointer;background:none}
-.qe button.pill.s2{background:var(--ok)}
+.qe .seg{display:inline-flex;gap:3px;flex:none}
+.qe button.pill{cursor:pointer;background:none;opacity:.45;border:1px solid var(--rule)}
+.qe button.pill.on{opacity:1}
+.qe button.pill.s2.on{background:var(--ok)}
 .qe .due.qd{cursor:pointer;text-decoration:underline dotted}
 .qe .due.qd.none{opacity:.55}
 .qe input.qdate{flex:none;padding:2px 4px;border:1.5px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink);font-size:.8rem}
@@ -561,22 +563,31 @@ window.addEventListener("beforeunload", e => { if (editing){ e.preventDefault();
 
 /* ---------- 바로 저장 (체크 · 계획 넣기) ---------- */
 /* mut 는 여러 번 실행해도 결과가 같아야 함 (다른 기기 저장과 겹치면 최신 내용에 다시 적용) */
+/* 저장은 한 번에 하나씩 차례로 (빨리 여러 번 눌러도 화면이 왔다 갔다 하지 않게) */
+let saveQ = [], saving = false;
 function commit(mut){
   if (editing){ mut(draft); render(); return; }
   withPw(async p => {
-    mut(data); render(); busySave = true; setSync("busy");
+    mut(data); render(); saveQ.push(mut);
+    if (saving) return;                    // 지금 저장 중이면, 끝난 뒤 이어서 한 번 더 저장
+    saving = true; busySave = true; setSync("busy");
     try {
-      for (let i = 0; i < 3; i++){
-        clean(data);
-        const j = await post({ action: "save", pw: p, baseRev: rev, data });
-        if (j && j.ok){ rev = j.rev; try { localStorage.setItem("examCache", JSON.stringify({ data, rev })); } catch(e){} setSync("on", "저장 완료 · 모든 기기와 동기화됨"); return; }
-        if (j && j.error === "conflict"){ data = normalize(j.data); rev = j.rev || 0; mut(data); render(); continue; }
-        if (j && j.error === "pw"){ forgetPw(); busySave = false; setSync("on"); await pull(); notice("비밀번호가 바뀌었습니다. 다시 눌러 주세요.", true); return; }
-        throw new Error();
+      while (saveQ.length){
+        const batch = saveQ.splice(0);
+        let ok = false;
+        for (let i = 0; i < 3; i++){
+          clean(data);
+          const j = await post({ action: "save", pw: p, baseRev: rev, data });
+          if (j && j.ok){ rev = j.rev; try { localStorage.setItem("examCache", JSON.stringify({ data, rev })); } catch(e){} ok = true; break; }
+          if (j && j.error === "conflict"){ data = normalize(j.data); rev = j.rev || 0; batch.concat(saveQ).forEach(m => m(data)); render(); continue; }
+          if (j && j.error === "pw"){ forgetPw(); saveQ = []; saving = busySave = false; setSync("on"); await pull(); notice("비밀번호가 바뀌었습니다. 다시 눌러 주세요.", true); return; }
+          throw new Error();
+        }
+        if (!ok) throw new Error();
       }
-      throw new Error();
-    } catch(e){ setSync("err", "저장 실패 · 인터넷 연결을 확인하세요"); }
-    finally { busySave = false; }
+      setSync("on", "저장 완료 · 모든 기기와 동기화됨");
+    } catch(e){ saveQ = []; setSync("err", "저장 실패 · 인터넷 연결을 확인하세요"); }
+    finally { saving = false; busySave = false; }
   });
 }
 function findById(d, id){
@@ -1644,11 +1655,15 @@ function quickRow(li, t, k, ex, s, it, items){
   };
   tx.onclick = editText; tx.onkeydown = e => { if (e.key === "Enter") editText(); };
   li.appendChild(tx);
-  /* 진도: 누를 때마다 안 함 → 진행 중 → 완료 */
+  /* 진도: 안 함 / 진행 중 / 완료 중 바로 고르기 */
   if (sk === "prog"){
-    const st = it.s || 0, pb = el("button", "pill s" + st, PROG[st]); pb.type = "button"; pb.setAttribute("aria-label", `진도 상태 ${PROG[st]}, 누르면 바꾸기`);
-    pb.onclick = () => { const n = ((it.s || 0) + 1) % 3; qSave(t, k, ex, sk, it, items, x => { x.s = n; markDone(x, n === 2); }); };
-    li.appendChild(pb);
+    const st = it.s || 0, seg = el("span", "seg"); seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "진도 상태");
+    PROG.forEach((nm, n) => {
+      const b = el("button", "pill" + (n === st ? " s" + n + " on" : ""), nm); b.type = "button"; b.setAttribute("aria-pressed", n === st);
+      b.onclick = () => { if ((it.s || 0) !== n) qSave(t, k, ex, sk, it, items, x => { x.s = n; markDone(x, n === 2); }); };
+      seg.appendChild(b);
+    });
+    li.appendChild(seg);
   }
   /* 날짜: 누르면 바꾸기 (진도는 수업일) */
   if (sk === "hw" || sk === "todo" || sk === "prog"){
