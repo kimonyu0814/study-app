@@ -284,6 +284,16 @@ button.mark{background:transparent;padding:0;cursor:pointer}
 .modal[hidden]{display:none}
 .dialog{background:var(--card);color:var(--ink);border-radius:10px;padding:20px;width:100%;max-width:360px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
 .dialog h3{margin:0 0 6px;font-size:1.1rem}
+/* 진행상황 보고 */
+.dialog.rep{max-width:520px;max-height:86vh;overflow:auto}
+.rep .head{font-size:1rem;font-weight:700;margin:4px 0 12px;line-height:1.5}
+.rep h4{margin:14px 0 6px;font-size:.92rem;border-bottom:1px solid var(--rule);padding-bottom:4px}
+.rep ul{margin:0;padding-left:1.2em;font-size:.88rem;line-height:1.6}
+.rep .none{color:var(--muted);font-size:.85rem;margin:0}
+.rep .advice{background:var(--paper);border-left:4px solid var(--grade);padding:8px 10px;font-size:.88rem;margin-top:14px;line-height:1.5}
+.rep .bad{color:var(--bad)}
+.rep .actions{display:flex;justify-content:flex-end;margin-top:16px}
+.hero .repbtn{margin-top:10px}
 .dialog p{margin:0 0 12px;font-size:.85rem;color:var(--muted)}
 .dialog .pw{width:100%;padding:10px 12px;border:1.5px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink);font-size:1.05rem;letter-spacing:.15em}
 .dialog .msg{min-height:1.4em;font-size:.82rem;color:var(--bad);margin:6px 0 10px}
@@ -1024,6 +1034,77 @@ function doneOn(t, day){
   (view().cal || []).forEach(it => { if (it.done && it.doneAt === day) out.push({ k: "_cal", n: "공통", g: "etc", sec: "todo", t: it.t }); });
   return out;
 }
+/* ---------- 지금 진행상황 보고 (앱 안에서 바로) ---------- */
+function statusReport(){
+  const t = curTerm(), td = today(), all = calItems(t), r = [];
+  const done = x => isDone(x), lab = x => `${x.n} · ${x.it.t}`;
+  const nx = nextExam(t);
+  const todayL = all.filter(x => x.d === td);
+  const late = all.filter(x => x.d < td && !done(x) && !/^예비일/.test(x.it.t)).sort((a, b) => a.d < b.d ? -1 : 1);
+  const soonHw = [];
+  TS(t).forEach(x => EXAMS.forEach(e => subjOf(t, x.k, e.k).hw.forEach(it => {
+    if (it.done) return; const dd = dday(it.due); if (dd && dd.diff >= 0 && dd.diff <= 3) soonHw.push({ n: x.n, t: it.t, dd });
+  })));
+  soonHw.sort((a, b) => a.dd.diff - b.dd.diff);
+  /* 공부 계획(PLAN2) 기준 */
+  const planSet = new Set(PLAN2.map(p => p[2]));
+  const plan = all.filter(x => planSet.has(x.it.t) && !/^예비일/.test(x.it.t));
+  const planDue = plan.filter(x => x.d <= td), planDone = planDue.filter(done).length, planLate = plan.filter(x => x.d < td && !done(x)).length;
+  const planNext = plan.filter(x => x.d > td || (x.d === td && !done(x))).sort((a, b) => a.d < b.d ? -1 : 1)[0];
+  const lect = plan.filter(x => /강의/.test(x.it.t)), lectDone = lect.filter(done).length;
+  const spare = all.filter(x => /^예비일/.test(x.it.t) && x.d >= td).sort((a, b) => a.d < b.d ? -1 : 1)[0];
+  const weekEnd = ymd(addDays(parseD(td), 6 - ((parseD(td).getDay() + 6) % 7)));
+  const weekLeft = all.filter(x => x.d > td && x.d <= weekEnd && !done(x)).length;
+  /* 한 줄 결론 */
+  const tLeft = todayL.filter(x => !done(x)).length;
+  const head = [nx ? `${EXN[nx.ex]} ${nx.dd.label}` : "",
+    todayL.length ? (tLeft ? `오늘 할 일 ${tLeft}개 남음` : "오늘 할 일 모두 끝냄 ✓") : "오늘 잡힌 할 일 없음",
+    late.length ? `밀린 일 ${late.length}개` : "밀린 일 없음"].filter(Boolean).join(" · ");
+  r.push(["head", head]);
+  r.push(["오늘 할 일 (" + todayL.filter(done).length + "/" + todayL.length + ")", todayL.map(x => (done(x) ? "✓ " : "□ ") + lab(x))]);
+  r.push(["밀린 일", late.slice(0, 8).map(x => `${md(parseD(x.d))} ${lab(x)}`).concat(late.length > 8 ? [`외 ${late.length - 8}개`] : []), true]);
+  r.push(["마감 3일 안 학원 숙제", soonHw.map(h => `${h.n} · ${h.t} (${h.dd.diff === 0 ? "오늘 마감" : `D-${h.dd.diff}`})`)]);
+  if (plan.length){
+    const lines = [`오늘까지 할 계획 ${planDue.length}개 중 ${planDone}개 완료` + (planLate ? ` · ${planLate}개 밀림` : " · 계획대로 진행 중"),
+      `람보 강의 ${lectDone} / ${lect.length}강 완료`];
+    if (planNext) lines.push(`다음 계획: ${md(parseD(planNext.d))} ${planNext.it.t}`);
+    r.push(["공부 계획", lines]);
+  }
+  r.push(["과목별 진도 · " + EXN[curExam()], TS(t).filter(x => { const s = subjOf(t, x.k, curExam()); return s.prog.length || leftCount(t, x.k, curExam()); }).map(x => { const s = subjOf(t, x.k, curExam());
+    const tot = s.prog.length, fin = s.prog.filter(i => (i.s || 0) === 2).length, ing = s.prog.filter(i => (i.s || 0) === 1).length;
+    return `${x.n}: 진도 ${fin}/${tot} 완료` + (ing ? ` · 진행 중 ${ing}` : "") + ` · 남은 일 ${leftCount(t, x.k, curExam())}개`; })]);
+  /* 조언 한마디 */
+  let tip;
+  if (late.length && spare) tip = `밀린 일 ${late.length}개는 ${md(parseD(spare.d))} 예비일에 먼저 처리하세요.`;
+  else if (late.length) tip = `밀린 일 ${late.length}개부터 정리하세요. 가장 오래된 것: ${lab(late[0])}`;
+  else if (tLeft) tip = `오늘 남은 ${tLeft}개를 끝내면 계획대로입니다.`;
+  else tip = "밀린 일 없이 계획대로 가고 있습니다. 👍";
+  if (weekLeft) tip += ` 이번 주 남은 일은 ${weekLeft}개입니다.`;
+  r.push(["tip", tip]);
+  return r;
+}
+function showReport(){
+  const old = $("repModal"); if (old) old.remove();
+  const m = el("div", "modal"); m.id = "repModal"; m.style.zIndex = "100";
+  const box = el("div", "dialog rep"); box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true"); box.setAttribute("aria-label", "현재 진행상황");
+  const now = new Date();
+  box.appendChild(el("h3", null, "📋 현재 진행상황"));
+  box.appendChild(el("p", null, `${md(now)} ${pad2(now.getHours())}:${pad2(now.getMinutes())} 기준`));
+  statusReport().forEach(([h, v, warn]) => {
+    if (h === "head"){ box.appendChild(el("div", "head", v)); return; }
+    if (h === "tip"){ box.appendChild(el("div", "advice", "💡 " + v)); return; }
+    box.appendChild(el("h4", null, h));
+    if (!v.length){ box.appendChild(el("p", "none", "없음")); return; }
+    const ul = el("ul"); v.forEach(t => ul.appendChild(el("li", warn ? "bad" : null, t))); box.appendChild(ul);
+  });
+  const act = el("div", "actions"), ok = el("button", "btn primary", "닫기"); ok.type = "button";
+  const close = () => { m.remove(); document.removeEventListener("keydown", esc); };
+  const esc = e => { if (e.key === "Escape") close(); };
+  ok.onclick = close; m.onclick = e => { if (e.target === m) close(); };
+  document.addEventListener("keydown", esc);
+  act.appendChild(ok); box.appendChild(act); m.appendChild(box); document.body.appendChild(m);
+  ok.focus();
+}
 function renderHome(p){
   const t = curTerm();
   const tl = el("div", "termline");
@@ -1059,6 +1140,7 @@ function renderHome(p){
     c.onclick = () => { nav.main = "y" + t[0]; nav.sem[nav.main] = +t[2]; nav.ex = nav.ex || {}; nav.ex[t] = e.k; saveNav(); render(); window.scrollTo({ top: 0 }); };
     chips.appendChild(c);
   });
+  if (!editing){ const rb = el("button", "btn primary repbtn", "📋 현재 진행상황 받기"); rb.type = "button"; rb.onclick = showReport; left.appendChild(rb); }
   hero.append(left, chips); p.appendChild(hero);
 
   const g = el("div", "grid2");
