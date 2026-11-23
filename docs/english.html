@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>영어 지문 정리 · 암기</title>
+<script>/* PC 앱이면 PC 전용 디자인 */ try { if (window.App && App.isPC){ document.documentElement.classList.add("pc"); document.write('<link rel="stylesheet" href="pc.css?v=3">'); } } catch(e){}</script>
+<style>
+:root{--paper:#FBFAF7;--card:#fff;--ink:#1F2433;--muted:#6E7180;--rule:#E4E1D8;--accent:#2F4A8A;--ok:#1F7A4D;--bad:#C2372D;--warn:#B7791F;--hl:#FFF3C4;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme: dark){:root{--paper:#15171D;--card:#1C1F27;--ink:#E9E8EE;--muted:#A2A5B3;--rule:#2E323D;--accent:#8FA8E8;--ok:#5CCB93;--bad:#FF7B70;--warn:#E8B04B;--hl:#4A4220}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.55}
+main{max-width:720px;margin:0 auto;padding:18px 16px 70px}
+.back{display:inline-block;color:var(--muted);text-decoration:none;font-size:.9rem;margin-bottom:8px;background:none;border:none;padding:0;cursor:pointer;font:inherit}
+h1{font-size:1.5rem;margin:0 0 4px}
+h2{font-size:1.05rem;margin:18px 0 8px}
+.sub{color:var(--muted);margin:0 0 16px;font-size:.9rem}
+.card{background:var(--card);border:1.5px solid var(--rule);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+button{font:inherit;cursor:pointer}
+.btn{padding:9px 16px;border-radius:8px;border:1.5px solid var(--rule);background:var(--card);color:var(--ink)}
+.btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:700}
+.btn.ok{border-color:var(--ok);color:var(--ok)} .btn.no{border-color:var(--bad);color:var(--bad)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+/* 목록 */
+.pl{display:grid;gap:8px}
+.pi{display:flex;gap:10px;align-items:center;text-align:left;width:100%;padding:12px 14px;background:var(--card);border:1.5px solid var(--rule);border-radius:10px;color:inherit}
+.pi:hover{border-color:var(--accent)}
+.pi .no{flex:none;font-size:.78rem;color:var(--muted);width:76px}
+.pi b{display:block;font-size:.98rem}
+.pi small{color:var(--muted)}
+.pi .st{margin-left:auto;flex:none;font-size:.78rem;text-align:right;color:var(--muted)}
+.pi .st .g{color:var(--ok);font-weight:700}
+/* 탭 */
+.tabs{display:flex;gap:4px;border-bottom:1.5px solid var(--rule);margin:10px 0 14px;overflow-x:auto}
+.tabs button{border:none;background:none;padding:9px 12px;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--ink);font-weight:700;border-bottom-color:var(--ink)}
+/* 정리 */
+.qno{font-size:.8rem;color:var(--muted)}
+.ask{font-weight:700;margin:4px 0 10px;font-size:1.02rem}
+textarea{width:100%;min-height:90px;padding:10px 12px;border:1.5px solid var(--rule);border-radius:8px;background:var(--paper);color:var(--ink);font:inherit;resize:vertical}
+textarea:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.keys{margin:10px 0;display:flex;flex-wrap:wrap;gap:6px}
+.key{font-size:.82rem;padding:3px 10px;border-radius:999px;border:1.5px solid var(--rule)}
+.key.hit{border-color:var(--ok);color:var(--ok)}
+.key.miss{border-color:var(--bad);color:var(--bad)}
+.model{background:var(--hl);border-radius:8px;padding:10px 12px;margin:10px 0;font-size:.95rem}
+.model b{display:block;font-size:.8rem;color:var(--muted);margin-bottom:2px}
+.verdict{font-weight:700;margin:6px 0}
+.verdict.ok{color:var(--ok)} .verdict.no{color:var(--bad)}
+.dots{display:flex;gap:6px;margin-bottom:10px}
+.dots span{width:26px;height:6px;border-radius:3px;background:var(--rule)}
+.dots span.d{background:var(--ok)} .dots span.c{background:var(--accent)}
+.note li{margin-bottom:8px}
+.note .mine{display:block}
+.note .mdl{display:block;font-size:.85rem;color:var(--muted)}
+/* 흐름 */
+.flow{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+.flow button{width:100%;text-align:left;padding:10px 12px;border:1.5px solid var(--rule);border-radius:8px;background:var(--card);color:var(--ink)}
+.flow button.used{opacity:.35}
+.flow.ans li{padding:10px 12px;border-radius:8px;background:var(--paper);border:1.5px dashed var(--rule)}
+.flow.ans li.right{border-style:solid;border-color:var(--ok)}
+.flow.ans li.wrong{border-style:solid;border-color:var(--bad)}
+/* 핵심 문장 */
+.cloze{font-size:1.02rem;line-height:2.1}
+.cloze input{font:inherit;width:9em;padding:1px 6px;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--ink);text-align:center}
+.cloze input.right{border-color:var(--ok);color:var(--ok)}
+.cloze input.wrong{border-color:var(--bad);color:var(--bad)}
+/* 단어 */
+.fc{min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer;user-select:none}
+.fc .w{font-size:1.6rem;font-weight:700}
+.fc .m{font-size:1.15rem;margin-top:8px;color:var(--accent)}
+.fc .h{font-size:.8rem;color:var(--muted);margin-top:10px}
+.vt{width:100%;border-collapse:collapse;font-size:.92rem}
+.vt td{padding:6px 4px;border-bottom:1px solid var(--rule)}
+.vt td.k{color:var(--ok);width:1.5em}
+.muted{color:var(--muted);font-size:.88rem}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script src="eng-data.js"></script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+const FROM_LIB = new URLSearchParams(location.search).get("from") === "lib";
+
+/* ----- 기록: 이 기기에 저장 ----- */
+let st = {};
+try { st = JSON.parse(localStorage.getItem("engStudy") || "{}"); } catch(e){}
+const save = () => { try { localStorage.setItem("engStudy", JSON.stringify(st)); } catch(e){} };
+const S = id => (st[id] = st[id] || { ans: {}, ok: {}, known: [], flowOk: false, keyOk: false });
+
+let cur = null, tab = "note", qi = 0;
+
+/* ----- 핵심어 확인: 띄어쓰기 · 대소문자 무시 ----- */
+const norm = s => String(s || "").toLowerCase().replace(/[\s.,·'"’‘“”()~!?]/g, "");
+function checkKeys(text, keys){
+  const t = norm(text);
+  return keys.map(alts => ({ label: alts[0], hit: alts.some(a => t.includes(norm(a))) }));
+}
+
+/* ========== 목록 ========== */
+function renderList(){
+  const app = $("app"); app.innerHTML = "";
+  if (FROM_LIB){ const b = el("a", "back", "‹ 학습자료"); b.href = "library.html"; app.appendChild(b); }
+  app.appendChild(el("h1", null, "영어 지문 정리 · 암기"));
+  app.appendChild(el("p", "sub", "유도 질문에 답하며 직접 정리하고, 흐름 · 핵심 문장 · 단어로 외웁니다."));
+  const sets = [...new Set(ENG.map(p => p.set))];
+  sets.forEach(sn => {
+    app.appendChild(el("h2", null, sn));
+    const pl = el("div", "pl");
+    ENG.filter(p => p.set === sn).forEach(p => {
+      const s = st[p.id] || {}, okN = Object.values(s.ok || {}).filter(Boolean).length;
+      const b = el("button", "pi"); b.type = "button";
+      const no = el("span", "no", p.no); const mid = el("div"); mid.append(el("b", null, p.title), el("small", null, p.type));
+      const right = el("span", "st");
+      if (s.noteDone) right.append(el("span", "g", "✓ 정리"), document.createElement("br"));
+      else if (okN) right.append(`정리 ${okN}/${p.q.length}`, document.createElement("br"));
+      if (s.known && s.known.length) right.append(`단어 ${s.known.length}/${p.vocab.length}`);
+      b.append(no, mid, right);
+      b.onclick = () => { cur = p; tab = "note"; qi = firstOpen(p); render(); window.scrollTo(0, 0); };
+      pl.appendChild(b);
+    });
+    app.appendChild(pl);
+  });
+  app.appendChild(el("p", "muted", "기록은 이 기기에 저장됩니다."));
+}
+function firstOpen(p){ const s = S(p.id); const i = p.q.findIndex((_, k) => !s.ok[k]); return i < 0 ? 0 : i; }
+
+/* ========== 지문 화면 ========== */
+function render(){
+  if (!cur) return renderList();
+  const app = $("app"); app.innerHTML = "";
+  const bk = el("button", "back", "‹ 지문 목록"); bk.type = "button"; bk.onclick = () => { cur = null; render(); window.scrollTo(0, 0); };
+  app.appendChild(bk);
+  app.appendChild(el("h1", null, cur.title));
+  app.appendChild(el("p", "sub", `${cur.set} ${cur.no} · ${cur.type}`));
+  const tabs = el("div", "tabs"); tabs.setAttribute("role", "tablist");
+  [["note", "① 직접 정리"], ["flow", "② 흐름 맞추기"], ["key", "③ 핵심 문장"], ["voca", "④ 단어"], ["sum", "내 정리 노트"]].forEach(([k, n]) => {
+    const b = el("button", null, n); b.type = "button"; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", tab === k);
+    b.onclick = () => { tab = k; render(); }; tabs.appendChild(b);
+  });
+  app.appendChild(tabs);
+  ({ note: renderNote, flow: renderFlow, key: renderKey, voca: renderVoca, sum: renderSum })[tab](app);
+}
+
+/* ① 직접 정리: 유도 질문 하나씩 */
+function renderNote(app){
+  const s = S(cur.id), q = cur.q[qi];
+  const dots = el("div", "dots");
+  cur.q.forEach((_, k) => { const d = el("span", s.ok[k] ? "d" : k === qi ? "c" : ""); dots.appendChild(d); });
+  app.appendChild(dots);
+  const c = el("div", "card");
+  c.append(el("div", "qno", `질문 ${qi + 1} / ${cur.q.length}`), el("div", "ask", q.ask));
+  const ta = el("textarea"); ta.placeholder = "지문을 다시 보며 내 말로 써 보세요."; ta.setAttribute("aria-label", q.ask);
+  ta.value = s.ans[qi] || ""; ta.oninput = () => { s.ans[qi] = ta.value; save(); };
+  c.appendChild(ta);
+  const out = el("div");
+  const chk = el("button", "btn primary", "확인"); chk.type = "button";
+  const hint = el("button", "btn", "힌트"); hint.type = "button";
+  const row = el("div", "row"); row.style.marginTop = "10px"; row.append(chk, hint); c.append(row, out);
+  hint.onclick = () => {
+    out.innerHTML = "";
+    const k = el("div", "keys");
+    q.keys.forEach(alts => k.appendChild(el("span", "key", alts[0].slice(0, 1) + "○".repeat(Math.max(1, alts[0].length - 1)))));
+    out.append(el("p", "muted", "이런 말이 들어가야 합니다 (첫 글자 힌트):"), k);
+  };
+  const showResult = () => {
+    out.innerHTML = "";
+    const res = checkKeys(ta.value, q.keys), hit = res.filter(r => r.hit).length;
+    const k = el("div", "keys");
+    res.forEach(r => k.appendChild(el("span", "key " + (r.hit ? "hit" : "miss"), (r.hit ? "✓ " : "✕ ") + r.label)));
+    const all = hit === res.length;
+    out.appendChild(el("div", "verdict " + (all ? "ok" : "no"), all ? "핵심어가 모두 들어갔습니다 👍" : `핵심어 ${hit} / ${res.length}개 · 빠진 말을 넣어 다시 써 보거나 모범 정리와 비교하세요`));
+    out.appendChild(k);
+    const m = el("div", "model"); m.append(el("b", null, "모범 정리"), document.createTextNode(q.model)); out.appendChild(m);
+    const r2 = el("div", "row");
+    const ok = el("button", "btn ok", "맞게 정리했어요"); ok.type = "button";
+    const re = el("button", "btn no", "다시 쓸게요"); re.type = "button";
+    ok.onclick = () => { s.ok[qi] = true; if (cur.q.every((_, i) => s.ok[i])) s.noteDone = true; save(); next(); };
+    re.onclick = () => { s.ok[qi] = false; save(); out.innerHTML = ""; ta.focus(); };
+    r2.append(ok, re); out.appendChild(r2);
+  };
+  chk.onclick = () => { if (!ta.value.trim()){ ta.focus(); out.innerHTML = ""; out.appendChild(el("p", "verdict no", "먼저 답을 써 보세요.")); return; } showResult(); };
+  app.appendChild(c);
+  const nav = el("div", "row");
+  const pv = el("button", "btn", "‹ 이전 질문"); pv.type = "button"; pv.disabled = qi === 0; pv.onclick = () => { qi--; render(); };
+  const nx = el("button", "btn", "다음 질문 ›"); nx.type = "button"; nx.disabled = qi === cur.q.length - 1; nx.onclick = () => { qi++; render(); };
+  nav.append(pv, nx); app.appendChild(nav);
+  if (s.ans[qi] && s.ok[qi] !== undefined) showResult();
+  function next(){
+    const i = cur.q.findIndex((_, k) => !s.ok[k]);
+    if (i < 0){ tab = "sum"; } else qi = i;
+    render(); window.scrollTo(0, 0);
+  }
+}
+
+/* ② 흐름 맞추기: 섞인 문장을 순서대로 누르기 */
+let flowPick = [], flowOrder = null;
+function renderFlow(app){
+  const s = S(cur.id), f = cur.flow;
+  if (!flowOrder || flowOrder.id !== cur.id){ flowOrder = { id: cur.id, ix: f.map((_, i) => i).sort(() => Math.random() - .5) }; flowPick = []; }
+  app.appendChild(el("p", "muted", "글의 흐름을 순서대로 눌러 보세요." + (s.flowOk ? " (이미 맞힌 적 있음 ✓)" : "")));
+  const ans = el("ol", "flow ans");
+  flowPick.forEach((ix, k) => { const li = el("li", null, f[ix]); if (flowPick.length === f.length) li.className = ix === k ? "right" : "wrong"; ans.appendChild(li); });
+  if (flowPick.length) app.appendChild(ans);
+  const ul = el("ul", "flow"); ul.style.marginTop = "12px";
+  flowOrder.ix.forEach(ix => {
+    const li = el("li"), b = el("button", flowPick.includes(ix) ? "used" : "", f[ix]); b.type = "button";
+    b.disabled = flowPick.includes(ix) || flowPick.length === f.length;
+    b.onclick = () => { flowPick.push(ix); if (flowPick.length === f.length){ const ok = flowPick.every((v, k) => v === k); if (ok){ s.flowOk = true; save(); } } render(); };
+    li.appendChild(b); ul.appendChild(li);
+  });
+  if (flowPick.length < f.length) app.appendChild(ul);
+  if (flowPick.length === f.length){
+    const ok = flowPick.every((v, k) => v === k);
+    app.appendChild(el("div", "verdict " + (ok ? "ok" : "no"), ok ? "흐름을 정확히 맞혔습니다 👍" : "순서가 다른 곳이 있습니다 (빨간 테두리)"));
+    if (!ok){ const r = el("ol", "flow ans"); f.forEach(t => r.appendChild(el("li", "right", t))); app.append(el("p", "muted", "정답 흐름"), r); }
+  }
+  const re = el("button", "btn", "다시 하기"); re.type = "button"; re.style.marginTop = "12px";
+  re.onclick = () => { flowOrder = null; render(); }; app.appendChild(re);
+}
+
+/* ③ 핵심 문장 빈칸 */
+function renderKey(app){
+  const s = S(cur.id);
+  app.appendChild(el("p", "muted", "지문의 핵심 문장입니다. 빈칸에 들어갈 영어 단어를 쓰세요." + (s.keyOk ? " (이미 맞힌 적 있음 ✓)" : "")));
+  const inputs = [];
+  cur.key.forEach(sen => {
+    const c = el("div", "card cloze");
+    sen.split(/(\[[^\]]+\])/).forEach(part => {
+      const m = /^\[(.+)\]$/.exec(part);
+      if (!m){ c.appendChild(document.createTextNode(part)); return; }
+      const inp = el("input"); inp.autocapitalize = "off"; inp.autocomplete = "off"; inp.spellcheck = false;
+      inp.setAttribute("aria-label", "빈칸 (" + m[1].length + "글자)"); inp.size = Math.max(4, m[1].length);
+      inp.style.width = Math.max(4, m[1].length + 1) + "ch"; inp.dataset.a = m[1];
+      inputs.push(inp); c.appendChild(inp);
+    });
+    app.appendChild(c);
+  });
+  const out = el("div");
+  const row = el("div", "row");
+  const chk = el("button", "btn primary", "채점"); chk.type = "button";
+  const show = el("button", "btn", "정답 보기"); show.type = "button";
+  chk.onclick = () => {
+    let ok = 0;
+    inputs.forEach(i => { const r = norm(i.value) === norm(i.dataset.a); i.className = r ? "right" : "wrong"; if (r) ok++; });
+    out.innerHTML = ""; out.appendChild(el("div", "verdict " + (ok === inputs.length ? "ok" : "no"), ok === inputs.length ? "모두 맞혔습니다 👍" : `${ok} / ${inputs.length} 맞음`));
+    if (ok === inputs.length){ s.keyOk = true; save(); }
+  };
+  show.onclick = () => { inputs.forEach(i => { i.value = i.dataset.a; i.className = "right"; }); };
+  row.append(chk, show); app.append(row, out);
+  if (cur.answer){ const a = el("p", "muted", "문제 정답: " + cur.answer); a.style.marginTop = "18px"; app.appendChild(a); }
+}
+
+/* ④ 단어 카드 */
+let vq = null;
+function renderVoca(app){
+  const s = S(cur.id), V = cur.vocab;
+  if (!vq || vq.id !== cur.id) vq = { id: cur.id, list: V.map((_, i) => i).filter(i => !s.known.includes(V[i][0])).sort(() => Math.random() - .5), flip: false };
+  app.appendChild(el("p", "muted", `외운 단어 ${s.known.length} / ${V.length} · 카드를 누르면 뜻이 보입니다.`));
+  if (!vq.list.length){
+    app.appendChild(el("div", "verdict ok", "이 지문 단어를 모두 외웠습니다 👍"));
+    const re = el("button", "btn", "처음부터 다시"); re.type = "button"; re.onclick = () => { s.known = []; save(); vq = null; render(); }; app.appendChild(re);
+  } else {
+    const i = vq.list[0], card = el("div", "card fc"); card.tabIndex = 0; card.setAttribute("role", "button"); card.setAttribute("aria-label", "단어 카드, 눌러서 뜻 보기");
+    card.appendChild(el("div", "w", V[i][0]));
+    if (vq.flip) card.appendChild(el("div", "m", V[i][1]));
+    card.appendChild(el("div", "h", vq.flip ? "알았나요?" : "눌러서 뜻 보기"));
+    const flip = () => { vq.flip = !vq.flip; render(); };
+    card.onclick = flip; card.onkeydown = e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); flip(); } };
+    app.appendChild(card);
+    const row = el("div", "row");
+    const yes = el("button", "btn ok", "알아요"); yes.type = "button";
+    const no = el("button", "btn no", "몰라요 (다시 나옴)"); no.type = "button";
+    yes.onclick = () => { s.known.push(V[i][0]); save(); vq.list.shift(); vq.flip = false; render(); };
+    no.onclick = () => { vq.list.push(vq.list.shift()); vq.flip = false; render(); };
+    row.append(yes, no); app.appendChild(row);
+  }
+  const t = el("table", "vt");
+  V.forEach(([e, k]) => { const tr = el("tr"); tr.append(el("td", "k", s.known.includes(e) ? "✓" : ""), el("td", null, e), el("td", null, k)); t.appendChild(tr); });
+  app.append(el("h2", null, "단어 목록"), t);
+}
+
+/* 내 정리 노트: 내가 쓴 답 모아 보기 */
+function renderSum(app){
+  const s = S(cur.id);
+  const okN = cur.q.filter((_, k) => s.ok[k]).length;
+  app.appendChild(el("p", "muted", `정리 ${okN} / ${cur.q.length} · 흐름 ${s.flowOk ? "✓" : "—"} · 핵심 문장 ${s.keyOk ? "✓" : "—"} · 단어 ${s.known.length}/${cur.vocab.length}`));
+  const ol = el("ol", "note");
+  cur.q.forEach((q, k) => {
+    const li = el("li"); li.append(el("b", null, q.ask));
+    li.appendChild(el("span", "mine", s.ans[k] ? "✏️ " + s.ans[k] : "✏️ (아직 안 씀)"));
+    li.appendChild(el("span", "mdl", "모범: " + q.model));
+    ol.appendChild(li);
+  });
+  app.appendChild(ol);
+  app.appendChild(el("h2", null, "글의 흐름"));
+  const f = el("ol"); cur.flow.forEach(t => f.appendChild(el("li", null, t))); app.appendChild(f);
+}
+
+render();
+</script>
+</body>
+</html>

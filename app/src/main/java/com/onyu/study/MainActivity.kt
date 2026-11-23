@@ -43,7 +43,7 @@ class MainActivity : Activity() {
     private val tabsByRole = mapOf(
         "0000" to listOf(
             Tab("study", "학습기록", "index.html"),
-            Tab("check", "정답확인", "check.html"),
+            Tab("check", "학습자료", "library.html"),
             Tab("schedule", "스케줄", "family.html#tab=schedule"),
             Tab("admin", "관리", "family.html#tab=admin"),
             Tab("settings", "설정", "family.html#tab=settings")

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>학습자료</title>
+<script>/* PC 앱이면 PC 전용 디자인 */ try { if (window.App && App.isPC){ document.documentElement.classList.add("pc"); document.write('<link rel="stylesheet" href="pc.css?v=3">'); } } catch(e){}</script>
+<style>
+:root{--paper:#FBFAF7;--card:#fff;--ink:#1F2433;--muted:#6E7180;--rule:#E4E1D8;--accent:#2F4A8A;--ok:#1F7A4D;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme: dark){:root{--paper:#15171D;--card:#1C1F27;--ink:#E9E8EE;--muted:#A2A5B3;--rule:#2E323D;--accent:#8FA8E8;--ok:#5CCB93}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.5}
+main{max-width:680px;margin:0 auto;padding:24px 18px 60px}
+h1{font-size:1.7rem;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 20px}
+.list{display:grid;gap:12px}
+a.item{display:flex;align-items:center;gap:14px;padding:16px;background:var(--card);border:1.5px solid var(--rule);border-radius:12px;color:inherit;text-decoration:none}
+a.item:hover,a.item:focus-visible{border-color:var(--accent)}
+a.item .ic{font-size:1.8rem;flex:none}
+a.item b{display:block;font-size:1.05rem}
+a.item span{color:var(--muted);font-size:.88rem}
+a.item .go{margin-left:auto;color:var(--muted);font-size:1.3rem}
+.prog{margin-top:4px;font-size:.8rem;color:var(--ok)}
+</style>
+</head>
+<body>
+<main>
+  <h1>학습자료</h1>
+  <p class="sub">공부할 자료를 고르세요.</p>
+  <div class="list">
+    <a class="item" href="check.html?from=lib">
+      <span class="ic" aria-hidden="true">✅</span>
+      <div><b>정답확인</b><span>문제집 · 모의고사 답 맞추기와 채점</span></div>
+      <span class="go" aria-hidden="true">›</span>
+    </a>
+    <a class="item" href="english.html?from=lib">
+      <span class="ic" aria-hidden="true">📖</span>
+      <div><b>영어 지문 정리 · 암기</b><span>10월 모의고사 · 올림포스 Unit 15~17 (22개 지문)</span><div class="prog" id="engProg"></div></div>
+      <span class="go" aria-hidden="true">›</span>
+    </a>
+  </div>
+</main>
+<script src="eng-data.js"></script>
+<script>
+try {
+  const st = JSON.parse(localStorage.getItem("engStudy") || "{}");
+  const done = ENG.filter(p => (st[p.id] || {}).noteDone).length;
+  if (done) document.getElementById("engProg").textContent = `정리 완료 ${done} / ${ENG.length} 지문`;
+} catch(e){}
+</script>
+</body>
+</html>
