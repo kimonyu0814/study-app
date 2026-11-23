@@ -445,7 +445,14 @@ class MainActivity : Activity() {
                 }
                 val apk = url
                 val notes = j.optString("body", "").trim()
-                if (latest > BuildConfig.VERSION_CODE && apk != null) {
+                // 이 버전이 특정 사람에게만인지 (docs/update-targets.json) — 목록에 없으면 묻지 않음
+                var forMe = true
+                try {
+                    val t = JSONObject(Study.httpGet(Study.PAGES + "update-targets.json?t=" + System.currentTimeMillis())).optJSONObject("apk")
+                    val who = t?.optJSONArray(latest.toString())
+                    if (who != null) forMe = (0 until who.length()).any { k -> who.optString(k) == Me.role(this) }
+                } catch (e: Exception) {}
+                if (forMe && latest > BuildConfig.VERSION_CODE && apk != null) {
                     runOnUiThread {
                         if (!isFinishing) {
                             AlertDialog.Builder(this)

@@ -195,6 +195,16 @@ app.whenReady().then(() => {
       // 업데이트가 반쯤 깔려 파일이 빠지는 일 막기: 통째로 받고, 끌 때 몰래 설치하지 않음 ('지금 다시 시작'을 눌렀을 때만)
       autoUpdater.disableDifferentialDownload = true;
       autoUpdater.autoInstallOnAppQuit = false;
+      // 이 버전이 특정 사람에게만인지 확인한 뒤에만 받음 (docs/update-targets.json)
+      autoUpdater.autoDownload = false;
+      autoUpdater.on("update-available", async info => {
+        try {
+          const t = await (await fetch(PAGES + "update-targets.json?t=" + Date.now())).json();
+          const who = ((t && t.pc) || {})[info.version];
+          if (Array.isArray(who) && !who.includes(cfg.role)) return;
+        } catch (e) {}
+        autoUpdater.downloadUpdate().catch(() => {});
+      });
       autoUpdater.on("update-downloaded", info => {
         dialog.showMessageBox(win, { type: "info", buttons: ["지금 다시 시작", "나중에"], title: "업데이트",
           message: `새 버전(${info.version})을 받았습니다.`, detail: "다시 시작하면 적용됩니다. '나중에'를 누르면 다음에 켤 때 다시 물어봅니다." })

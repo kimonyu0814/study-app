@@ -86,10 +86,52 @@ const $ = id => document.getElementById(id);
 const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
 const FROM_LIB = new URLSearchParams(location.search).get("from") === "lib";
 
-/* ----- 기록: 이 기기에 저장 ----- */
+/* ----- 기록: 이 기기에 바로 저장 + 구글 시트(학습기록과 같은 곳)에 동기화 → 폰 · PC 어디서나 같음 ----- */
+const API = "https://script.google.com/macros/s/AKfycbzwUGDOfoBCJbPQx96HCMN8vin0OPCcREB-kYGv-yiDVGkHIOlapcL85oasQRA71NdX/exec";
 let st = {};
 try { st = JSON.parse(localStorage.getItem("engStudy") || "{}"); } catch(e){}
-const save = () => { try { localStorage.setItem("engStudy", JSON.stringify(st)); } catch(e){} };
+let PW = ""; try { PW = localStorage.getItem("examPw") || ""; } catch(e){}
+try { if (window.App && App.role() === "0000" && App.pw()) PW = App.pw(); } catch(e){}
+const local = () => { try { localStorage.setItem("engStudy", JSON.stringify(st)); } catch(e){} };
+/* 지문별로 더 나중에 고친 쪽을 남김 */
+function mergeEng(a, b){ const o = Object.assign({}, a); Object.keys(b || {}).forEach(k => { if (!o[k] || (b[k].at || 0) > (o[k].at || 0)) o[k] = b[k]; }); return o; }
+let pushT = null, pushing = false, again = false;
+function save(){
+  if (cur){ S(cur.id).at = Date.now(); }
+  local(); setSyncMsg("");
+  clearTimeout(pushT); pushT = setTimeout(push, 1200);
+}
+async function push(){
+  if (!PW) return setSyncMsg("이 기기에만 저장됨 (학습기록에서 비밀번호를 한 번 넣으면 동기화됩니다)");
+  if (pushing){ again = true; return; }
+  pushing = true; setSyncMsg("저장 중…");
+  try {
+    for (let i = 0; i < 3; i++){
+      const g = await (await fetch(API + "?app=exam&t=" + Date.now())).json();
+      if (!g || !g.exam) throw new Error();
+      const d = g.data || {}; d.eng = mergeEng(d.eng || {}, st); st = mergeEng(st, d.eng); local();
+      const r = await (await fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ app: "exam", action: "save", pw: PW, baseRev: g.rev || 0, data: d }) })).json();
+      if (r && r.ok){ setSyncMsg("저장 완료 · 모든 기기와 같음"); break; }
+      if (r && r.error === "pw"){ setSyncMsg("비밀번호가 바뀌어 이 기기에만 저장됨"); break; }
+      if (!(r && r.error === "conflict")) throw new Error();
+    }
+  } catch(e){ setSyncMsg("인터넷 연결이 안 돼 이 기기에만 저장됨 · 다음에 다시 올림"); }
+  pushing = false;
+  if (again){ again = false; push(); }
+}
+async function pullEng(){
+  try {
+    const g = await (await fetch(API + "?app=exam&t=" + Date.now())).json();
+    if (!g || !g.exam) return;
+    const before = JSON.stringify(st);
+    st = mergeEng(st, (g.data || {}).eng || {}); local();
+    const ae = document.activeElement;
+    if (JSON.stringify(st) !== before && !(ae && /TEXTAREA|INPUT/.test(ae.tagName))) render();
+    if (Object.keys(st).some(k => !((g.data || {}).eng || {})[k] || (st[k].at || 0) > (((g.data || {}).eng || {})[k].at || 0))) push();   // 이 기기에만 있던 기록 올리기
+  } catch(e){}
+}
+function setSyncMsg(t){ const m = $("syncMsg"); if (m) m.textContent = t; }
 const S = id => (st[id] = st[id] || { ans: {}, ok: {}, known: [], flowOk: false, keyOk: false });
 
 let cur = null, tab = "note", qi = 0;
@@ -125,7 +167,7 @@ function renderList(){
     });
     app.appendChild(pl);
   });
-  app.appendChild(el("p", "muted", "기록은 이 기기에 저장됩니다."));
+  const sm = el("p", "muted"); sm.id = "syncMsg"; sm.textContent = PW ? "기록은 폰 · PC 어디서나 같게 저장됩니다." : "이 기기에만 저장됨 (학습기록에서 비밀번호를 한 번 넣으면 동기화됩니다)"; app.appendChild(sm);
 }
 function firstOpen(p){ const s = S(p.id); const i = p.q.findIndex((_, k) => !s.ok[k]); return i < 0 ? 0 : i; }
 
@@ -143,6 +185,7 @@ function render(){
     b.onclick = () => { tab = k; render(); }; tabs.appendChild(b);
   });
   app.appendChild(tabs);
+  const sm = el("p", "muted"); sm.id = "syncMsg"; sm.style.cssText = "font-size:.78rem;margin:-8px 0 10px"; app.appendChild(sm);
   ({ note: renderNote, flow: renderFlow, key: renderKey, voca: renderVoca, sum: renderSum })[tab](app);
 }
 
@@ -302,6 +345,8 @@ function renderSum(app){
 }
 
 render();
+pullEng();
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") pullEng(); });
 </script>
 </body>
 </html>
