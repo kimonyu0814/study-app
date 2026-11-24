@@ -83,3 +83,7 @@ html.pc .login form{background:#D4D0C8;border:2px outset #FFFFFF !important;padd
 html.pc .login h1{margin:0 0 12px !important;text-align:left}
 html.pc .login p, html.pc .login input, html.pc .login .err, html.pc .login button{margin-left:16px !important;margin-right:16px !important;width:calc(100% - 32px) !important}
 html.pc .login input{font-size:15px !important;letter-spacing:.3em}
+
+/* 정답확인 번호판: 틀림은 빨간 칸 (안 푼 흰 칸과 구분) */
+html.pc .nums button.no{background:#C00000 !important;border-color:#C00000 !important;color:#FFFFFF !important}
+html.pc .nums button.ok{background:#008000 !important;border-color:#008000 !important;color:#FFFFFF !important}

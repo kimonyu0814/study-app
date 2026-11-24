@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=Nanum+Myeongjo:wght@700;800&display=swap" rel="stylesheet">
-<script>/* PC 앱이면 PC 전용 디자인 */ try { if (window.App && App.isPC){ document.documentElement.classList.add("pc"); document.write('<link rel="stylesheet" href="pc.css?v=4">'); } } catch(e){}</script>
+<script>/* PC 앱이면 PC 전용 디자인 */ try { if (window.App && App.isPC){ document.documentElement.classList.add("pc"); document.write('<link rel="stylesheet" href="pc.css?v=5">'); } } catch(e){}</script>
 <style>
 :root{
   --paper:#FFFDFB; --sheet:#FFF6F6; --line:#E7A9B5; --line-soft:#F4D6DC;
@@ -62,7 +62,7 @@ button:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px sol
 .nums button.t::after{content:"";position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--muted)}
 .nums button[aria-current="true"]{border-color:var(--ink);border-width:2px;font-weight:700}
 .nums button.ok{background:var(--ok);border-color:var(--ok);color:#fff}
-.nums button.no{border-color:var(--pen);color:var(--pen)}
+.nums button.no{background:var(--pen);border-color:var(--pen);color:#fff}   /* 틀림: 빨갛게 칠해서 안 푼 칸과 구분 */
 .verdict{text-align:center;min-height:1.6em;margin-top:12px;font-weight:700;font-size:1.05rem}
 .verdict.ok{color:var(--ok)} .verdict.no{color:var(--pen)}
 .choice{display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap}
