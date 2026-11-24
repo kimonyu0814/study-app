@@ -625,7 +625,22 @@ function grade(){
     out.append(sc, h);
   }
   out.appendChild(grid);
-  $("bulkbar").hidden = tried === 0;
+  autoRecord();
+  $("bulkbar").hidden = true;   // 이제 채점하는 즉시 위(번호판 · 풀이 현황)에 기록되므로 버튼 필요 없음
+}
+/* 한꺼번에 채점: 답을 넣는 즉시 위 번호판 · 풀이 현황에 기록
+   - 처음 기록하는 문항은 그대로 기록, 이번에 입력하며 기록한 문항은 고치면 같이 바뀜
+   - 예전에 기록된 문항은 이번에 틀렸으면 '틀림'으로 바꿈 (틀린 건 꼭 남게) */
+const bulkWrote = new Set();
+function autoRecord(){
+  if (!lastBulk || !lastBulk.length) return;
+  const st = S(), key = sid(bi, si); let changed = false;
+  lastBulk.forEach(([q, ok]) => {
+    const v = ok ? "ok" : "no", k = key + ":" + q;
+    if (!st[q] || bulkWrote.has(k)){ if (st[q] !== v){ st[q] = v; changed = true; } bulkWrote.add(k); }
+    else if (!ok && st[q] !== "no"){ st[q] = "no"; changed = true; bulkWrote.add(k); }
+  });
+  if (changed){ persist(key); paintBooks(); paintNums(); }
 }
 function bulkPick(m){
   const L = objList(); if (bulkPos >= L.length) return;
