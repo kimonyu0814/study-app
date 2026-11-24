@@ -7,7 +7,7 @@ html.pc{
   --paper:#D4D0C8; --card:#D4D0C8; --sheet:#FFFFFF;
   --ink:#000000; --pen:#000000; --muted:#404040;
   --rule:#808080; --rule-soft:#B0ACA4; --line:#808080; --line-soft:#B0ACA4;
-  --accent:#0A246A; --ok:#008000; --bad:#C00000; --warn:#806000; --mark:#C00000;
+  --accent:#0A246A; --ok:#008000; --bad:#C00000; --warn:#806000; --mark:#008000;
   color-scheme:light;
 }
 html.pc, html.pc body{background:#D4D0C8 !important;color:#000 !important}
