@@ -446,7 +446,8 @@ function normalize(d){
   out.schedule = Array.isArray(d.schedule) ? d.schedule : [];   /* 시간표(보류)는 그대로 보관 */
   out.cal = Array.isArray(d.cal) ? d.cal.filter(x => x && typeof x === "object") : [];   /* 과목 없는 공통 할 일 */
   out.seeds = d.seeds && typeof d.seeds === "object" ? Object.assign({}, d.seeds) : {};
-  out.eng = d.eng && typeof d.eng === "object" ? d.eng : {};   /* 영어 지문 정리 기록 (학습자료) */
+  out.eng = d.eng && typeof d.eng === "object" ? d.eng : {};
+  out.ox = d.ox && typeof d.ox === "object" ? d.ox : {};   /* 통사2 개념 OX 기록 (학습자료) */   /* 영어 지문 정리 기록 (학습자료) */
   return out;
 }
 const view = () => editing ? draft : data;

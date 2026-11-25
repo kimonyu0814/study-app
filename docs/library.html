@@ -34,6 +34,11 @@ a.item .go{margin-left:auto;color:var(--muted);font-size:1.3rem}
       <div><b>정답확인</b><span>문제집 · 모의고사 답 맞추기와 채점</span></div>
       <span class="go" aria-hidden="true">›</span>
     </a>
+    <a class="item" href="ox.html?from=lib">
+      <span class="ic" aria-hidden="true">⭕</span>
+      <div><b>통합사회2 개념 OX</b><span>통사2 – 3단원 / 4단원 / 5단원 (각 30문항)</span><div class="prog" id="oxProg"></div></div>
+      <span class="go" aria-hidden="true">›</span>
+    </a>
     <a class="item" href="english.html?from=lib">
       <span class="ic" aria-hidden="true">📖</span>
       <div><b>영어 지문 정리 · 암기</b><span>10월 모의고사 · 올림포스 Unit 15~17 (22개 지문)</span><div class="prog" id="engProg"></div></div>
@@ -51,6 +56,10 @@ try {
   const st = JSON.parse(localStorage.getItem("engStudy") || "{}");
   const done = ENG.filter(p => (st[p.id] || {}).noteDone).length;
   if (done) document.getElementById("engProg").textContent = `정리 완료 ${done} / ${ENG.length} 지문`;
+} catch(e){}
+try {
+  const ox = JSON.parse(localStorage.getItem("oxStudy") || "{}"); let n = 0; Object.values(ox).forEach(u => { n += Object.keys((u && u.r) || {}).length; });
+  if (n) document.getElementById("oxProg").textContent = `푼 문항 ${n} / 90`;
 } catch(e){}
 </script>
 </body>

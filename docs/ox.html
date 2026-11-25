@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>통합사회2 개념 OX</title>
+<script>/* PC 앱이면 PC 전용 디자인 */ try { if (window.App && App.isPC){ document.documentElement.classList.add("pc"); document.write('<link rel="stylesheet" href="pc.css?v=4">'); } } catch(e){}</script>
+<style>
+:root{--paper:#FBFAF7;--card:#fff;--ink:#1F2433;--muted:#6E7180;--rule:#E4E1D8;--accent:#2F4A8A;--ok:#1F7A4D;--bad:#C2372D;--hl:#FFF3C4;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme: dark){:root{--paper:#15171D;--card:#1C1F27;--ink:#E9E8EE;--muted:#A2A5B3;--rule:#2E323D;--accent:#8FA8E8;--ok:#5CCB93;--bad:#FF7B70;--hl:#4A4220}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.55}
+main{max-width:720px;margin:0 auto;padding:18px 16px 70px}
+.back{display:inline-block;color:var(--muted);text-decoration:none;font-size:.9rem;margin-bottom:8px;background:none;border:none;padding:0;cursor:pointer;font:inherit}
+h1{font-size:1.5rem;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 16px;font-size:.9rem}
+button{font:inherit;cursor:pointer}
+.btn{padding:9px 16px;border-radius:8px;border:1.5px solid var(--rule);background:var(--card);color:var(--ink)}
+.btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:700}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.units{display:grid;gap:10px}
+.unit{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:16px;background:var(--card);border:1.5px solid var(--rule);border-radius:12px;color:inherit}
+.unit:hover{border-color:var(--accent)}
+.unit b{display:block;font-size:1.05rem}
+.unit small{color:var(--muted)}
+.unit .st{margin-left:auto;text-align:right;font-size:.82rem;color:var(--muted);flex:none}
+.unit .st b{color:var(--ok);font-size:.95rem}
+.bar{height:6px;background:var(--rule);border-radius:3px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok)}
+.card{background:var(--card);border:1.5px solid var(--rule);border-radius:12px;padding:18px;margin:12px 0}
+.qno{display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted)}
+.lv{font-weight:700}.lv.하{color:var(--ok)}.lv.중{color:var(--accent)}.lv.상{color:var(--bad)}
+.q{font-size:1.15rem;font-weight:600;margin:12px 0 18px;line-height:1.6}
+.ox{display:flex;gap:14px;justify-content:center}
+.ox button{width:min(140px,40vw);aspect-ratio:1/1;font-size:3rem;font-weight:800;border-radius:16px;border:3px solid var(--rule);background:var(--card);color:var(--ink)}
+.ox button.o{color:var(--accent)} .ox button.x{color:var(--bad)}
+.ox button.pick.right{background:var(--ok);border-color:var(--ok);color:#fff}
+.ox button.pick.wrong{background:var(--bad);border-color:var(--bad);color:#fff}
+.ox button.ans{border-color:var(--ok)}
+.ox button:disabled{cursor:default}
+.verdict{font-weight:800;font-size:1.1rem;margin:16px 0 6px}
+.verdict.ok{color:var(--ok)} .verdict.no{color:var(--bad)}
+.exp{background:var(--hl);border-radius:8px;padding:10px 12px;font-size:.95rem}
+.dots{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
+.dots button{width:26px;height:26px;border-radius:6px;border:1.5px solid var(--rule);background:transparent;color:var(--muted);font-size:.7rem;padding:0}
+.dots button.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.dots button.no{background:var(--bad);border-color:var(--bad);color:#fff}
+.dots button.cur{outline:2px solid var(--ink);outline-offset:1px}
+.score{font-size:2.4rem;font-weight:800;margin:6px 0}
+.wl{list-style:none;padding:0;margin:0}
+.wl li{padding:10px 0;border-bottom:1px solid var(--rule)}
+.wl .a{font-weight:800;margin-right:6px}
+.wl .e{display:block;font-size:.88rem;color:var(--muted);margin-top:4px}
+.muted{color:var(--muted);font-size:.85rem}
+.filter{display:flex;gap:6px;margin:8px 0 14px;flex-wrap:wrap}
+.filter button{padding:6px 12px;border-radius:999px;border:1.5px solid var(--rule);background:var(--card);color:var(--ink);font-size:.88rem}
+.filter button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script src="ox-data.js?v=1"></script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+const FROM_LIB = new URLSearchParams(location.search).get("from") === "lib";
+
+/* ----- 기록: 기기에 바로 저장 + 구글 시트(학습기록과 같은 곳)에 동기화 ----- */
+const API = "https://script.google.com/macros/s/AKfycbzwUGDOfoBCJbPQx96HCMN8vin0OPCcREB-kYGv-yiDVGkHIOlapcL85oasQRA71NdX/exec";
+let st = {};   // { "3": { r: { "1": "O", ... } (내가 고른 답, 마지막 것), at } }
+try { st = JSON.parse(localStorage.getItem("oxStudy") || "{}"); } catch(e){}
+let PW = ""; try { PW = localStorage.getItem("examPw") || ""; } catch(e){}
+try { if (window.App && App.role() === "0000" && App.pw()) PW = App.pw(); } catch(e){}
+const local = () => { try { localStorage.setItem("oxStudy", JSON.stringify(st)); } catch(e){} };
+function merge(a, b){ const o = Object.assign({}, a); Object.keys(b || {}).forEach(k => { if (!o[k] || (b[k].at || 0) > (o[k].at || 0)) o[k] = b[k]; }); return o; }
+let pushT = null, pushing = false, again = false;
+function save(uk){ U(uk).at = Date.now(); local(); clearTimeout(pushT); pushT = setTimeout(push, 1200); }
+async function push(){
+  if (!PW) return;
+  if (pushing){ again = true; return; }
+  pushing = true;
+  try {
+    for (let i = 0; i < 3; i++){
+      const g = await (await fetch(API + "?app=exam&t=" + Date.now())).json();
+      if (!g || !g.exam) break;
+      const d = g.data || {}; d.ox = merge(d.ox || {}, st); st = merge(st, d.ox); local();
+      const r = await (await fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ app: "exam", action: "save", pw: PW, baseRev: g.rev || 0, data: d }) })).json();
+      if (!(r && r.error === "conflict")) break;
+    }
+  } catch(e){}
+  pushing = false; if (again){ again = false; push(); }
+}
+async function pull(){
+  try {
+    const g = await (await fetch(API + "?app=exam&t=" + Date.now())).json();
+    if (!g || !g.exam) return;
+    const srv = (g.data || {}).ox || {}, before = JSON.stringify(st);
+    st = merge(st, srv); local();
+    if (JSON.stringify(st) !== before && !cur) render();
+    if (Object.keys(st).some(k => !srv[k] || (st[k].at || 0) > (srv[k].at || 0))) push();
+  } catch(e){}
+}
+const U = k => (st[k] = st[k] || { r: {} });
+
+let cur = null, order = [], pos = 0, picked = null, mode = "all";
+const unitOf = k => OX.find(u => u.k === k);
+const stat = u => { const r = U(u.k).r; let ok = 0, no = 0; u.qs.forEach(q => { if (r[q.n]) (r[q.n] === q.a ? ok++ : no++); }); return { ok, no, done: ok + no }; };
+
+/* ===== 단원 고르기 ===== */
+function renderHome(){
+  const app = $("app"); app.innerHTML = "";
+  if (FROM_LIB){ const b = el("a", "back", "‹ 학습자료"); b.href = "library.html?t=" + Date.now(); app.appendChild(b); }
+  app.appendChild(el("h1", null, "통합사회2 개념 OX"));
+  app.appendChild(el("p", "sub", "기말 범위 Ⅲ·Ⅳ·Ⅴ단원 · 단원별 30문항 · 난이도 [하][중][상]"));
+  const box = el("div", "units");
+  OX.forEach(u => {
+    const s = stat(u), b = el("button", "unit"); b.type = "button";
+    const mid = el("div"); mid.style.flex = "1"; mid.append(el("b", null, "통사2 – " + u.k + "단원"), el("small", null, u.name.replace(/^[ⅢⅣⅤ]\. /, "")));
+    const bar = el("div", "bar"), i = el("i"); i.style.width = (s.done ? Math.round(s.done / u.qs.length * 100) : 0) + "%"; bar.appendChild(i); mid.appendChild(bar);
+    const r = el("span", "st");
+    if (s.done){ r.append(el("b", null, `${s.ok} / ${u.qs.length}`), document.createElement("br"), `틀림 ${s.no}`); } else r.textContent = "시작 전";
+    b.append(mid, r);
+    b.onclick = () => openUnit(u.k);
+    box.appendChild(b);
+  });
+  app.appendChild(box);
+}
+
+/* ===== 단원 안 ===== */
+function openUnit(k){ cur = unitOf(k); mode = "all"; start(); }
+function start(){
+  const r = U(cur.k).r;
+  let qs = cur.qs;
+  if (mode === "wrong") qs = qs.filter(q => r[q.n] && r[q.n] !== q.a);
+  if (mode === "left") qs = qs.filter(q => !r[q.n]);
+  if (mode === "상") qs = qs.filter(q => q.lv === "상");
+  order = qs.map(q => q.n); pos = 0; picked = null;
+  if (mode === "all"){ const f = order.findIndex(n => !r[n]); pos = f < 0 ? 0 : f; }
+  render(); window.scrollTo(0, 0);
+}
+function render(){
+  if (!cur) return renderHome();
+  const app = $("app"); app.innerHTML = "";
+  const bk = el("button", "back", "‹ 단원 목록"); bk.type = "button"; bk.onclick = () => { cur = null; render(); window.scrollTo(0, 0); }; app.appendChild(bk);
+  app.appendChild(el("h1", null, "통사2 – " + cur.k + "단원"));
+  app.appendChild(el("p", "sub", cur.name));
+  const s = stat(cur);
+  const f = el("div", "filter");
+  [["all", "전체"], ["left", "안 푼 것"], ["wrong", `틀린 것 (${s.no})`], ["상", "[상] 문항만"]].forEach(([k, n]) => {
+    const b = el("button", null, n); b.type = "button"; b.setAttribute("aria-pressed", mode === k); b.onclick = () => { mode = k; start(); }; f.appendChild(b);
+  });
+  app.appendChild(f);
+  if (!order.length){ app.appendChild(el("p", "muted", mode === "wrong" ? "틀린 문항이 없습니다 👍" : mode === "left" ? "모든 문항을 풀었습니다 👍" : "문항이 없습니다.")); return results(app); }
+  /* 번호판 */
+  const r = U(cur.k).r, dots = el("div", "dots");
+  order.forEach((n, i) => { const q = cur.qs.find(x => x.n === n); const b = el("button", (r[n] ? (r[n] === q.a ? "ok" : "no") : "") + (i === pos ? " cur" : ""), String(n)); b.type = "button";
+    b.setAttribute("aria-label", `${n}번` + (r[n] ? (r[n] === q.a ? " 맞음" : " 틀림") : ""));
+    b.onclick = () => { pos = i; picked = null; render(); }; dots.appendChild(b); });
+  app.appendChild(dots);
+  if (pos >= order.length) return results(app);
+  const q = cur.qs.find(x => x.n === order[pos]);
+  const c = el("div", "card");
+  const qn = el("div", "qno"); const lv = el("span", "lv " + q.lv, `[${q.lv}]`); qn.append(el("span", null, `${String(q.n).padStart(2, "0")}번 · ${pos + 1} / ${order.length}`), lv);
+  c.append(qn, el("div", "q", q.q));
+  const ox = el("div", "ox");
+  ["O", "X"].forEach(v => {
+    const b = el("button", v.toLowerCase(), v); b.type = "button"; b.setAttribute("aria-label", v === "O" ? "맞다 (O)" : "틀리다 (X)");
+    if (picked){ b.disabled = true; if (v === picked) b.classList.add("pick", picked === q.a ? "right" : "wrong"); if (v === q.a && picked !== q.a) b.classList.add("ans"); }
+    b.onclick = () => choose(q, v);
+    ox.appendChild(b);
+  });
+  c.appendChild(ox);
+  if (picked){
+    const ok = picked === q.a;
+    c.appendChild(el("div", "verdict " + (ok ? "ok" : "no"), ok ? `○ 정답! (${q.a})` : `✕ 틀렸습니다 · 정답은 ${q.a}`));
+    c.appendChild(el("div", "exp", q.e));
+    const nx = el("button", "btn primary", pos + 1 < order.length ? "다음 문제 ›" : "결과 보기"); nx.type = "button"; nx.style.marginTop = "14px";
+    nx.onclick = () => { pos++; picked = null; render(); window.scrollTo(0, 0); };
+    c.appendChild(nx);
+    setTimeout(() => nx.focus(), 0);
+  } else c.appendChild(el("p", "muted", "키보드: O 또는 1 = 맞다 · X 또는 2 = 틀리다 · Enter = 다음"));
+  app.appendChild(c);
+}
+function choose(q, v){ if (picked) return; picked = v; U(cur.k).r[q.n] = v; save(cur.k); render(); }
+function results(app){
+  const s = stat(cur), r = U(cur.k).r;
+  const c = el("div", "card");
+  c.append(el("div", "muted", "이 단원 결과"), el("div", "score", `${s.ok} / ${cur.qs.length}`), el("div", "muted", `푼 문항 ${s.done} · 맞음 ${s.ok} · 틀림 ${s.no}`));
+  const row = el("div", "row"); row.style.marginTop = "12px";
+  const w = el("button", "btn primary", "틀린 것만 다시"); w.type = "button"; w.disabled = !s.no; w.onclick = () => { mode = "wrong"; start(); };
+  const re = el("button", "btn", "기록 지우고 처음부터"); re.type = "button";
+  re.onclick = () => { if (!re.dataset.arm){ re.dataset.arm = 1; re.textContent = "한 번 더 누르면 지웁니다"; return; } U(cur.k).r = {}; save(cur.k); mode = "all"; start(); };
+  row.append(w, re); c.appendChild(row); app.appendChild(c);
+  const wrong = cur.qs.filter(q => r[q.n] && r[q.n] !== q.a);
+  if (wrong.length){
+    app.appendChild(el("h2", null, "틀린 문항 정리"));
+    const ul = el("ul", "wl");
+    wrong.forEach(q => { const li = el("li"); li.append(el("span", "a", q.a), document.createTextNode(`${String(q.n).padStart(2, "0")}. ${q.q}`), el("span", "e", q.e)); ul.appendChild(li); });
+    app.appendChild(ul);
+  }
+}
+document.addEventListener("keydown", e => {
+  if (!cur || pos >= order.length || /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+  const q = cur.qs.find(x => x.n === order[pos]);
+  if (!picked && (e.key === "o" || e.key === "O" || e.key === "1")) choose(q, "O");
+  else if (!picked && (e.key === "x" || e.key === "X" || e.key === "2")) choose(q, "X");
+});
+render();
+pull();
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") pull(); });
+</script>
+</body>
+</html>
