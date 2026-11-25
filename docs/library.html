@@ -41,7 +41,11 @@ a.item .go{margin-left:auto;color:var(--muted);font-size:1.3rem}
     </a>
   </div>
 </main>
-<script src="eng-data.js"></script>
+<script>
+/* 늘 최신 화면을 열도록 주소에 시각을 붙임 (앱이 예전 화면을 기억해 두지 않게) */
+document.querySelectorAll("a.item").forEach(a => a.addEventListener("click", () => { a.href = a.getAttribute("href").replace(/([?&])t=\d+/, "$1").replace(/[?&]$/, "") + "&t=" + Date.now(); }));
+</script>
+<script src="eng-data.js?v=2"></script>
 <script>
 try {
   const st = JSON.parse(localStorage.getItem("engStudy") || "{}");

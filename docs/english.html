@@ -79,7 +79,7 @@ textarea:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
 </head>
 <body>
 <main id="app"></main>
-<script src="eng-data.js"></script>
+<script src="eng-data.js?v=2"></script>
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
@@ -146,7 +146,7 @@ function checkKeys(text, keys){
 /* ========== 목록 ========== */
 function renderList(){
   const app = $("app"); app.innerHTML = "";
-  if (FROM_LIB){ const b = el("a", "back", "‹ 학습자료"); b.href = "library.html"; app.appendChild(b); }
+  if (FROM_LIB){ const b = el("a", "back", "‹ 학습자료"); b.href = "library.html?t=" + Date.now(); app.appendChild(b); }
   app.appendChild(el("h1", null, "영어 지문 정리 · 암기"));
   app.appendChild(el("p", "sub", "유도 질문에 답하며 직접 정리하고, 흐름 · 핵심 문장 · 단어로 외웁니다."));
   const sets = [...new Set(ENG.map(p => p.set))];
