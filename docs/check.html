@@ -132,8 +132,8 @@ details.srow.done .nm::after{content:" ✓";color:var(--ok);font-weight:700}
 .bk-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .bk-no{font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums}
 .bk-pos{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
-.bk-opts{display:flex;justify-content:space-around;gap:8px;margin:14px 0 10px}
-.bk-opts button{width:52px;height:52px;border-radius:50%;border:2px solid var(--line);background:transparent;color:var(--line);font:inherit;font-size:1.25rem;font-weight:700;cursor:pointer;touch-action:manipulation}
+.bk-opts{display:flex;justify-content:space-between;gap:10px;margin:16px 0 12px}
+.bk-opts button{flex:1;max-width:120px;height:78px;border-radius:50%;border:2px solid var(--line);background:transparent;color:var(--line);font:inherit;font-size:1.7rem;font-weight:700;cursor:pointer;touch-action:manipulation}
 .bk-opts button:active{background:var(--mark);color:var(--sheet);border-color:var(--mark)}
 .bk-opts button.sel{background:var(--mark);color:var(--sheet);border-color:var(--mark)}
 .bk-opts button:disabled{opacity:.35;cursor:default}
@@ -148,7 +148,7 @@ details.srow.done .nm::after{content:" ✓";color:var(--ok);font-weight:700}
 button.cell{font:inherit;font-size:.85rem;cursor:pointer;color:var(--ink)}
 .cell.cur{outline:2.5px solid var(--ink);outline-offset:1px}
 .cell.ok{border-color:var(--ok);color:var(--ok)}
-@media (max-width:420px){.bk-opts button{width:46px;height:46px}}
+@media (max-width:420px){.bk-opts button{height:62px;font-size:1.45rem}}
 .sync.err::before{background:var(--pen)}
 button.sync{font:inherit;font-size:.78rem;background:none;border:none;padding:4px 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .mailbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0 4px}
